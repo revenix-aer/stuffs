@@ -8,7 +8,7 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="FullVisual"
         component={FullVisual}
-        durationInFrames={60}
+        durationInFrames={300}
         fps={30}
         width={1920}
         height={1080}

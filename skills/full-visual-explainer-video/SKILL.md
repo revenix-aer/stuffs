@@ -24,7 +24,7 @@ production_mode: strict
 resolution: 1920x1080
 skills_dir: /home/droid/stuffs/skills
 target_duration: 60
-version: 3.0.0
+version: 3.1.0
 video_codec: libx264
 video_crf: 18
 work_dir: /home/droid/stuffs/work
@@ -289,6 +289,30 @@ Avoid repetitive compositions.
 
 The audience must receive new visual information throughout the video.
 
+## Visual relevance binding (mandatory)
+
+Every visual asset must be bound to an exact narration span before
+generation. Store this binding in the storyboard:
+
+-   `scene_id`
+-   `narration_span` (verbatim phrase or sentence)
+-   `visual_job` (what the viewer must learn from the asset)
+-   `asset_category` (`cloud_image`, `free_stock_footage`,
+    `svg_illustration`, `diagram`, `infographic`, `motion_graphic`)
+-   `relevance_test` (one sentence: "This image shows X because Y")
+
+Reject the asset if it cannot pass its relevance_test. No generic
+"mood" imagery and no image that merely looks cinematic without
+explaining the current narration.
+
+## Visual asset mix (mandatory)
+
+For an 8--12 scene production, use at least four distinct asset
+categories. Cloud-generated images may not exceed 60% of scenes.
+At least two scenes must use SVG/Remotion or infographic motion graphics.
+No cloud image may be reused unless it is deliberately reframed and its
+reuse is justified in the storyboard.
+
 # 8. VISUAL GENERATION
 
 This is a mandatory production stage.
@@ -343,6 +367,30 @@ Reject:
 
 Regenerate defective assets.
 
+## Cloud image quality standard (mandatory)
+
+Cloud image prompts must be scene-specific and must include all of the
+following fields in the final prompt string:
+
+-   Subject and action from the narration.
+-   Environment or context that identifies the scene.
+-   Shot type and camera angle.
+-   Lighting specification.
+-   Lens/composition guidance.
+-   Color palette from the visual bible.
+-   A consistency anchor describing recurring objects/materials.
+-   Explicit exclusions: no text, no captions, no watermark, no logo,
+    no gibberish.
+
+Use a quality suffix such as: cinematic documentary photography,
+controlled lighting, high detail, 1920x1080 composition, color graded,
+shallow depth of field. Modify it for the subject instead of pasting
+it blindly.
+
+Generated images must depict concrete things named in the narration.
+Reject all-purpose "forest", "technology", or "science" imagery unless
+those exact words are the active narration subject for that span.
+
 ## Visual continuity
 
 Maintain consistent recurring objects.
@@ -388,6 +436,26 @@ movement through generated footage, procedural animation, 3D animation,
 or carefully animated compositions.
 
 Do not count subtitle movement as meaningful visual animation.
+
+## Cinematic motion standard (mandatory)
+
+Eliminate slideshow behavior. A scene is not acceptable if it only
+cross-fades or slowly zooms a still image. Every animated scene must
+use at least one of:
+
+-   Perspective-correct Ken Burns movement with 8%--18% zoom plus a
+    justified pan.
+-   Parallax using separated foreground, subject, and background layers.
+-   SVG stroke/path, node, or icon animation.
+-   Remotion `spring()` based element entrances.
+-   Animated masks, crop reveals, or focus transitions.
+-   Diagram component animation (lines, arrows, nodes, labels).
+-   Motion-graphics title or statistic animation.
+
+Avoid reusing the same transform on consecutive scenes. Each scene's
+camera move must be named in the storyboard (`slow_push_left`,
+`parallax_right`, `scale_up_detail`, etc.). Simple center zoom is
+allowed only as one minor beat among several other motion types.
 
 ## Camera language
 
@@ -610,6 +678,18 @@ The narration must remain intelligible at all times.
 
 Never allow background music to overpower speech.
 
+## Audio mastering implementation standard (mandatory)
+
+-   Normalize narration to -16 LUFS with true peak at or below -1 dBTP.
+-   Generate audio per phrase so durations are measurable.
+-   Normalize background music to at least 18 dB below narration during
+    speech and fade it 300 ms at scene boundaries.
+-   Use sound effects only on documented visual events and record each
+    in the storyboard.
+-   Verify final loudness with `ffmpeg -filter_threads ... loudnorm` or
+    `ffmpeg-normalize` if available.
+-   Store music bed and effect mix as separate WAV stems before mastering.
+
 # 12. CAPTION SYSTEM
 
 Captions are mandatory.
@@ -636,10 +716,26 @@ Use subtle emphasis for important words.
 
 Avoid excessive bouncing, flashing, or distracting animations.
 
+## Caption timing and styling standard (mandatory)
+
+-   Captions must be built from measured narration durations, not
+    estimated from script word count alone.
+-   Generate narration per sentence/phrase and record each audio span.
+-   Caption cue end times must align to phrase audio boundaries with no
+    more than 80 ms error.
+-   Word highlighting may interpolate within a measured phrase, but cue
+    boundaries must follow actual speech.
+-   Maximum 42 characters per line and two lines maximum.
+-   Use one consistent sans-serif, bottom-safe placement, and 10% side
+    margins.
+-   Highlight one keyword per cue, synchronized with the exact phrase.
+-   Generate both SRT and styled ASS with animation only at cue changes.
+
 Generate:
 
 -   `captions/captions.srt`
 -   `captions/captions.ass`
+-   `audio/narration/narration-timings.json`
 
 # 13. PROFESSIONAL VIDEO EDITING
 
@@ -679,6 +775,27 @@ Every scene must have:
 
 The video must feel edited, not automatically stitched.
 
+## Transition standard (mandatory)
+
+Avoid repetitive hard cuts. Use context-appropriate transitions and
+vary them by scene purpose:
+
+-   Content changes: short crossfade (8--12 frames).
+-   Location/scale changes: whip pan, push, or camera travel.
+-   Data reveals: mask wipe, stroke draw, or expand.
+-   Emotional/payoff beats: dissolve to black then reveal.
+-   Keep transition duration below 15% of scene duration.
+-   Document the transition type for every scene.
+
+## Infographic and label standard (mandatory)
+
+Never use AI-generated text inside images for data, labels, names, or
+statistics. Generate all diagrams, charts, labels, callouts, and
+statistics as SVG or Remotion components. Animate them with real
+stroke, node, or value transitions. Use the generated image only as a
+background or environmental layer. Verify every numeric label against
+research before rendering.
+
 # 13B. REMOTION RENDER ENGINE (PREFERRED VIDEO RENDERER)
 
 Remotion is the preferred renderer for motion-graphics-heavy sections
@@ -704,6 +821,13 @@ Authoring rules:
 -   Use Remotion's animation primitives (`useCurrentFrame`, `spring`,
     `interpolate`) for real movement; do not fake animation with CSS.
 -   Keep deterministic render settings: 1920x1080, 30 FPS, 16:9.
+-   Implement reusable animated primitives for layered parallax,
+    Ken Burns images, captions, SVG diagrams, numeric counters, and
+    context-aware transitions.
+-   A Remotion scene must show multiple moving layers or elements; a
+    single centered fading image is not acceptable.
+-   Render intermediate per-scene files and inspect them before final
+    mastering.
 -   Render per scene or per act, then master with FFmpeg for audio,
     captions, and delivery.
 
@@ -795,8 +919,39 @@ Check:
 -   Are there image-generation defects?
 -   Are the objects consistent?
 -   Are captions positioned correctly?
+-   Does every visual directly illustrate its narration span?
+-   Are any images repeated or frozen longer than 0.75 seconds?
+-   Are there black frames or abrupt frame drops?
+-   Are caption cues overlapping, drifting, or covering key visuals?
 
 Reject the render if text cards dominate the video.
+
+## Strategic scene pacing standard (mandatory)
+
+-   Maintain 8--12 scenes for a 55--75 second production.
+-   No single image may remain static for more than 2 seconds; add
+    motion, overlays, or a transition.
+-   Align scene changes to sentence and audio boundaries.
+-   Vary scene durations deliberately; avoid equal-length scene slices.
+-   Record scene durations in seconds with at least 0.1 s precision.
+-   Replan pacing if the final runtime is below the minimum duration.
+
+## Automated technical checks (mandatory)
+
+Run and save results before final approval:
+
+-   `ffprobe` stream and duration checks.
+-   Black-frame detection with
+  `ffmpeg ... blackdetect=d=0.2:pic_th=0.98:pix_th=0.10`.
+-   Frozen-frame detection with
+  `ffmpeg ... freezedetect=n=0.003:d=0.75`.
+-   Scene-cut verification with
+  `select='gt(scene,0.3)'`.
+-   Duplicate frame-hash check across decoded frames.
+-   Caption cue count and overlap check.
+-   Loudness check for the final mix.
+-   Reject if black frames, frozen frames, duplicate dominant images,
+  unreadable captions, or caption/audio desync are found.
 
 ## B. Audio inspection
 

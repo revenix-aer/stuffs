@@ -128,11 +128,13 @@ def main():
     ap = argparse.ArgumentParser(description="Generate images with AI Horde")
     ap.add_argument("prompt")
     ap.add_argument("--negative", default="")
-    ap.add_argument("--width", type=int, default=512)
-    ap.add_argument("--height", type=int, default=512)
-    ap.add_argument("--steps", type=int, default=25)
+    ap.add_argument("--width", type=int, default=1024)
+    ap.add_argument("--height", type=int, default=576)
+    ap.add_argument("--steps", type=int, default=30)
     ap.add_argument("--cfg", type=float, default=7.5)
-    ap.add_argument("--sampler", default="k_euler")
+    ap.add_argument("--sampler", default="k_euler_a")
+    ap.add_argument("--raw-prompt", action="store_true",
+                    help="Disable automatic cinematic prompt enhancement.")
     ap.add_argument("--models", default="", help="comma-separated model names")
     ap.add_argument("--outdir", default="/home/droid/stuffs/output/horde")
     ap.add_argument("--nsfw", action="store_true")
@@ -142,6 +144,20 @@ def main():
     # dimensions must be multiples of 64 for SD
     w = (args.width // 64) * 64
     h = (args.height // 64) * 64
+    prompt = args.prompt
+    if not args.raw_prompt:
+        quality_suffix = (
+            "cinematic documentary photography, scene-specific composition, "
+            "controlled lighting, color graded, high detail, natural "
+            "materials, 16:9 framing, no text, no captions, no watermark"
+        )
+        if "cinematic documentary photography" not in prompt:
+            prompt = prompt.rstrip() + ", " + quality_suffix
+    negative = args.negative or (
+        "text, captions, watermark, logo, low resolution, blurry, "
+        "distorted anatomy, extra limbs, cartoon, duplicate objects, "
+        "generic unrelated scene"
+    )
     params = {
         "n": 1,
         "width": max(64, w),
@@ -150,11 +166,10 @@ def main():
         "cfg_scale": args.cfg,
         "sampler_name": args.sampler,
     }
-    if args.negative:
-        params["negative_prompt"] = args.negative
+    params["negative_prompt"] = negative
 
-    print(f"submitting prompt: {args.prompt!r}")
-    job_id = submit(args.prompt, params, nsfw=args.nsfw, models=args.models)
+    print(f"submitting prompt: {prompt!r}")
+    job_id = submit(prompt, params, nsfw=args.nsfw, models=args.models)
     print(f"job id: {job_id}")
 
     data = poll(job_id, overall_timeout=args.timeout)
