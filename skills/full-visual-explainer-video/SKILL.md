@@ -24,7 +24,7 @@ production_mode: strict
 resolution: 1920x1080
 skills_dir: /home/droid/stuffs/skills
 target_duration: 60
-version: 3.1.0
+version: 4.0.0-openmontage
 video_codec: libx264
 video_crf: 18
 work_dir: /home/droid/stuffs/work
@@ -88,51 +88,137 @@ A failed production is preferable to a falsely successful production.
 
 # 3. FIRST: DISCOVER THE ENVIRONMENT
 
-Before production, inspect the available environment.
+Before production, inspect the actual available environment and capabilities.
+Never assume a provider, API, subscription, GPU, model, MCP tool, or skill
+is available because it is mentioned in this skill or in another guide.
 
-Check for:
+At the beginning of production, discover actual available capabilities
+across:
 
--   FFmpeg.
--   FFprobe.
--   Python.
--   Node.js (>= 18) and npm.
--   Remotion CLI and project (see "REMOTION RENDER ENGINE" below).
--   ImageMagick.
--   MoviePy.
--   Blender.
--   SVG rendering tools.
--   Available image-generation tools.
--   Available video-generation tools.
--   Available TTS providers.
--   Available neural voices.
--   Available audio-processing tools.
--   Available storage.
--   Network availability.
+-   Installed command-line tools and versions (FFmpeg, FFprobe, Python,
+    Node.js >= 18 and npm, MoviePy, SVG rendering tools,
+    audio-processing tools).
+-   Python packages and runtime capabilities.
+-   Image-generation APIs and local tools.
+-   Video-generation APIs and local renderers.
+-   Stock image providers and permitted download methods.
+-   Stock video providers and permitted download methods.
+-   TTS providers and available neural voices.
+-   Rendering engines (Remotion, FFmpeg, MoviePy).
+-   Available MCP tools.
+-   Available agent skills.
+-   Network connectivity.
+-   API credentials and authentication status (never print keys or expose
+    credentials in logs).
+-   Storage, disk space, and processing resources.
 
 Discover actual tool availability before selecting the production
 workflow.
 
-Do not assume that an API, subscription, GPU, or model exists.
+Use installed and verified capabilities first. Do not assume an API,
+subscription, GPU, model, MCP tool, or skill exists.
 
-Use installed capabilities first.
+## 3.1 Provider registry
 
 Create:
 
 `work/[topic]/preproduction/environment-report.md`
 
-Record:
+and:
 
--   Available tools.
--   Tool versions.
--   Available TTS engines.
--   Available voice identifiers.
--   Image generation capabilities.
--   Video generation capabilities.
+`work/[topic]/preproduction/provider-registry.json`
+
+The provider registry must record, for every discovered provider or tool:
+
+-   Provider name.
+-   Capability.
+-   Availability.
+-   Authentication status.
+-   Supported formats.
+-   Maximum resolution when known.
+-   Known limitations.
+-   Cost information when available.
+-   Rate limits when documented.
+-   Selection priority.
+
+Never invent provider capabilities, pricing, limits, or plan availability.
+If a value cannot be verified, record it as unknown/unavailable rather than
+estimating it.
+
+Record in the environment report:
+
+-   Available tools and versions.
+-   Available TTS engines and verified voice identifiers.
+-   Image generation, stock, and video capabilities.
+-   MCP tools and agent skills actually available.
 -   Missing dependencies.
--   Storage limitations.
+-   Storage and processing limitations.
+-   Network and authentication status without exposing secrets.
 
-Do not spend time repeatedly installing tools that are already
-functional.
+Do not spend time repeatedly installing tools that are already functional.
+
+Do not install paid services or subscribe to APIs.
+
+## 3.2 Provider adapter architecture
+
+The production pipeline must not depend on a single image, video, or audio
+provider.
+
+Where an implementation is required, use a provider-independent adapter
+architecture. Each provider adapter exposes a consistent interface
+conceptually equivalent to:
+
+-   ImageProvider: generate(prompt, settings), validate(asset),
+    get_metadata(asset).
+-   VideoProvider: generate(prompt, settings), validate(asset),
+    get_metadata(asset).
+-   StockProvider: search(query, filters), download(asset),
+    validate_license(asset).
+-   TTSProvider: synthesize(text, settings), validate(asset),
+    get_metadata(asset).
+
+These interface descriptions are architectural requirements, not permission
+to create nonfunctional placeholder methods. Implement actual adapters only
+for providers whose APIs and authentication have been verified. Do not
+fabricate integrations. Do not generate fake adapter results.
+
+## 3.3 Task-based provider selection
+
+Select the production method per scene, not for the entire video. Base the
+choice on narration meaning, visual purpose, factual accuracy, availability,
+licensing, quality, generation cost, production time, and continuity.
+
+Recommended task-to-method guidance:
+
+-   Real-world environments: stock video.
+-   Historical events: verified archival footage.
+-   Nature and wildlife: stock video.
+-   Human activities: stock video.
+-   Generic atmospheric scenes: stock video or AI generation.
+-   Anatomical demonstrations: 3D animation.
+-   Molecular visualization: 3D or procedural animation.
+-   Mechanical assembly: 3D animation.
+-   Abstract scientific processes: AI visuals or procedural animation.
+-   Unique cinematic scenes: AI image/video generation.
+-   Technical diagrams: original SVG or procedural graphics.
+
+The orchestrator must:
+
+1.  Understand the narration.
+2.  Identify the visual requirements of every narration segment.
+3.  Determine the best visual production method.
+4.  Search existing assets and cached materials.
+5.  Search relevant stock libraries.
+6.  Evaluate available stock assets.
+7.  Generate original assets only where needed.
+8.  Validate all downloaded and generated assets.
+9.  Maintain continuity.
+10. Send validated assets to the editing pipeline.
+
+Do not generate an AI image when a suitable, high-quality stock asset already
+exists. Do not use stock footage when a precise scientific animation is
+necessary. Do not select assets simply because they contain matching
+keywords. Visual relevance is mandatory.
 
 # 4. PRODUCTION STYLE
 
@@ -313,20 +399,83 @@ At least two scenes must use SVG/Remotion or infographic motion graphics.
 No cloud image may be reused unless it is deliberately reframed and its
 reuse is justified in the storyboard.
 
+# 7B. SCENE-LEVEL ASSET DECISION ENGINE
+
+Each scene must receive an explicit asset strategy before asset creation.
+Save these decisions in:
+
+`work/[topic]/preproduction/scene-asset-plan.json`
+
+Each entry must include at minimum:
+
+-   `scene_id`
+-   `narration`
+-   `visual_subject`
+-   `visual_action`
+-   `preferred_asset_type`
+-   `alternative_asset_type`
+-   `animation_required`
+-   `stock_search_queries`
+-   `visual_requirements`
+-   `narration_span`
+-   `visual_job`
+-   `asset_category`
+-   `relevance_test`
+-   selected provider or generation method
+-   selection rationale
+
+Example:
+
+```json
+{
+  "scene_id": "SCENE_004",
+  "narration": "Inside every modern data center...",
+  "visual_subject": "Data center infrastructure",
+  "visual_action": "Server racks operating",
+  "preferred_asset_type": "stock_video",
+  "alternative_asset_type": "ai_generated_video",
+  "animation_required": false,
+  "stock_search_queries": [
+    "cinematic data center server racks",
+    "hyperscale data center interior",
+    "server hardware close up"
+  ],
+  "visual_requirements": [
+    "realistic server infrastructure",
+    "visible equipment",
+    "professional lighting",
+    "no visible brand distortion"
+  ]
+}
+```
+
+The asset decision engine must consider narration meaning, visual purpose,
+factual accuracy, availability, licensing, visual quality, generation cost,
+production time, and continuity. The agent must explain why it selected stock
+footage, stock photography, AI generation, or original animation when
+documenting each scene.
+
 # 8. VISUAL GENERATION
 
 This is a mandatory production stage.
 
 Generate actual visual assets.
 
-Preferred asset sources:
+Preferred asset sources (selected per scene according to narration
+meaning and the task-based provider selection rules):
 
-1.  High-quality AI-generated images.
-2.  AI-generated video.
-3.  Original Blender renders.
-4.  Licensed documentary footage.
-5.  Verified educational diagrams.
-6.  Original SVG and procedural graphics for supporting information.
+1.  Existing project assets and reusable cached assets.
+2.  Relevant, licensed stock video.
+3.  Relevant, licensed stock photography or archival footage.
+4.  High-quality AI-generated images.
+5.  AI-generated video.
+6.  Original Remotion/compositor-rendered motion graphics.
+7.  Verified educational diagrams.
+8.  Original SVG and procedural graphics for supporting information.
+
+Do not generate an AI image when a suitable, high-quality stock asset already
+exists. Do not use stock footage when a precise scientific animation is
+necessary.
 
 Use the correct tool for each scene.
 
@@ -408,6 +557,272 @@ Use reference images when supported.
 
 Never independently regenerate a recurring object without preserving its
 established appearance.
+
+# 8B. STOCK IMAGE AND STOCK VIDEO INTEGRATION
+
+Stock footage and stock photography are primary visual production resources,
+not optional emergency fallbacks. They must be actively searched based on
+the actual narration after narration is finalized.
+
+## 8B.1 Recommended stock providers
+
+Discover and evaluate accessible providers before use. Candidate providers
+include:
+
+-   Pexels.
+-   Pixabay (verified primary stock image and video provider when
+    `PIXABAY_API_KEY` is configured).
+-   Unsplash for photography.
+-   Wikimedia Commons.
+-   Other verified royalty-free or properly licensed media libraries.
+
+Provider availability must be established before use. Use official APIs or
+permitted download methods. Respect API terms, attribution requirements,
+download restrictions, and licensing conditions. Never bypass paywalls,
+authentication, licensing restrictions, or provider rate limits. Do not
+assume that every asset on a stock platform is free for commercial use.
+
+### Pixabay adapter (verified primary provider)
+
+Authentication and safety:
+
+-   Read the API key from the `PIXABAY_API_KEY` environment variable only.
+-   Never hardcode, log, print, commit, or expose the API key.
+-   Never fabricate provider results if the key is missing or invalid.
+-   If `PIXABAY_API_KEY` is unavailable, mark Pixabay unavailable and do
+    not silently switch to an unverified provider.
+
+Endpoints:
+
+-   Image search: `GET https://pixabay.com/api/`
+-   Video search: `GET https://pixabay.com/api/videos/`
+
+Request parameters (selected; see Pixabay API documentation for full
+details):
+
+-   `key` (required): API key.
+-   `q`: URL-encoded search term, max 100 characters.
+-   `lang`: language code; default `en`.
+-   `id`: retrieve individual item by ID.
+-   Images: `image_type` (`all`, `photo`, `illustration`, `vector`),
+    `orientation` (`all`, `horizontal`, `vertical`), `category`,
+    `min_width`, `min_height`, `colors`, `editors_choice`, `safesearch`,
+    `order` (`popular`, `latest`), `page`, `per_page` (3-200).
+-   Videos: `category`, `min_width`, `min_height`, `editors_choice`,
+    `safesearch`, `order`, `page`, `per_page` (3-200).
+-   `callback`, `pretty` are development-only and should not be used in
+    production.
+
+Rate limits and caching:
+
+-   Default limit: 100 requests per 60 seconds per API key. Do not exceed
+    it.
+-   Inspect `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and
+    `X-RateLimit-Reset`.
+-   Cache successful search responses for at least 24 hours.
+-   Avoid systematic mass queries or mass downloads; the API is intended for
+    real human-scaled searches.
+
+Hotlinking and storage:
+
+-   Temporary display of search-result URLs is allowed.
+-   Permanent hotlinking of image URLs is not allowed; download approved
+    images to the project storage before production use.
+-   Video URLs may be embedded, but storing the approved rendition on
+    project storage is preferred.
+
+License and attribution:
+
+-   Pixabay content is released under the Pixabay Content License. Verify
+    the current terms before commercial use.
+-   Attribution is not required, but record provider, creator, asset ID,
+    source URL, and license in the stock asset registry.
+-   Do not assume an asset is suitable if its license/status changes; keep
+    license verification in the audit.
+
+Response handling:
+
+-   Images: use response keys such as `total`, `totalHits`, `hits`, and
+    each hit's `id`, `pageURL`, `tags`, `type`, `user`, `user_id`,
+    `previewURL`, `webformatURL`, `largeImageURL`, approved full-resolution
+    fields (`fullHDURL`, `imageURL`) only when full API access is granted,
+    dimensions, file size, views, downloads, likes, and comments.
+-   Videos: use response keys such as `total`, `totalHits`, `hits`, and
+    each hit's `id`, `pageURL`, `tags`, `duration`, `videos` (`large`,
+    `medium`, `small`, `tiny` with `url`, `width`, `height`, `size`,
+    `thumbnail`), views, downloads, likes, comments, contributor fields.
+-   Prefer rendition dimensions matching or exceeding final output
+    (1080p/4K) rather than upscaling smaller sources.
+-   Validate each selected asset before download and after download; reject
+    watermarked, distorted, or irrelevant results.
+
+## 8B.2 Narration-driven stock search
+
+After narration is finalized, perform semantic visual analysis. Break
+narration into meaningful visual segments and analyze:
+
+-   Main subject.
+-   Supporting subject.
+-   Environment.
+-   Visual action.
+-   Desired footage or imagery.
+-   Unsuitable footage or imagery.
+
+Generate multiple search queries per segment using subject, environment,
+action, camera perspective, visual context, specific objects, and cinematic
+style. Use semantic relevance; do not rely on keyword matching alone.
+
+## 8B.3 Stock footage selection criteria
+
+Evaluate candidates based on actual visual relevance, resolution, aspect
+ratio, frame rate, visual quality, lighting, composition, camera movement,
+subject visibility, duration, watermarks, license conditions, and download
+availability.
+
+Reject footage that is unrelated to the narration, low resolution, heavily
+compressed, watermarked, visually distorted, misleading, inappropriate for
+the subject, or incompatible with the required production format.
+
+Prefer 1080p or higher footage. Prefer 4K when available and practical. Do
+not stretch low-resolution material to manufacture the appearance of 4K.
+
+## 8B.4 Stock image selection and integration
+
+Stock photographs may be used for historical context, real-world
+environments, people and activities, landscapes, buildings, hardware,
+wildlife, and supporting documentary imagery. Integrate them creatively
+using layered parallax, foreground/background separation, depth-based camera
+movement, animated annotations, controlled camera movement, object
+highlighting, and motion graphics. Do not simply place a sequence of stock
+photographs on screen.
+
+## 8B.5 Stock video integration
+
+Prioritize actual stock video over static photography whenever real-world
+motion adds value. Select stock video according to the narration's specific
+meaning. Never use generic cinematic footage merely to fill the timeline.
+
+## 8B.6 Asset licensing and attribution
+
+For every downloaded stock asset, maintain:
+
+-   Asset ID.
+-   Original URL.
+-   Provider.
+-   Creator, when available.
+-   License type.
+-   Attribution requirements.
+-   Download date.
+-   Original filename.
+-   Local filename.
+-   Resolution.
+-   Duration for video.
+-   Usage restrictions.
+
+Save:
+
+`assets/stock/stock-asset-registry.json`
+
+and:
+
+`assets/stock/attribution-report.md`
+
+Never claim an asset is royalty-free or commercially usable without
+verifying the applicable license. When licensing cannot be confirmed, do not
+use the asset in final commercial production.
+
+## 8B.7 Visual coverage requirements
+
+Every narration segment must have an appropriate visual. Use a mixture of
+stock video, stock images, AI-generated imagery, original 3D animation,
+procedural diagrams, and licensed archival footage. There is no mandatory
+percentage for each source; choose what communicates the narration most
+accurately. Stock footage must not become an excuse for visually generic
+production. The visual director must keep the entire documentary coherent and
+stylistically consistent.
+
+# 8C. RESOURCE OPTIMIZATION ENGINE
+
+Implement intelligent resource management to prevent unnecessary API calls,
+duplicate downloads, excessive generation, and wasted rendering time.
+
+## 8C.1 Production budget
+
+Before generating assets, estimate expected image-generation requests,
+video-generation requests, stock searches, download volume, TTS usage,
+processing requirements, available disk space, and available API credits when
+verifiable. Create:
+
+`work/[topic]/preproduction/resource-budget.md`
+
+Never invent a monetary estimate. If provider pricing is unavailable, report
+that the cost cannot be calculated.
+
+## 8C.2 Search before generation (mandatory)
+
+Use this asset-selection order unless a scene requires a unique or
+scientifically accurate visualization:
+
+1.  Check existing project assets.
+2.  Check reusable cached assets.
+3.  Search accessible stock libraries.
+4.  Evaluate stock footage and images.
+5.  Search other properly licensed media sources.
+6.  Generate original imagery when necessary.
+7.  Generate video when actual footage or animation is required and
+    generation is available.
+8.  Create original procedural or 3D animation when appropriate.
+
+Accuracy and visual relevance always take precedence over cost.
+
+## 8C.3 Asset caching
+
+Implement reusable asset caching for stock search results, downloaded stock
+assets, generated images, generated videos, narration files, audio effects,
+rendered scene segments, and intermediate compositions. Use content hashes
+to prevent unnecessary duplicate downloads and generation.
+
+Cache metadata must include asset hash, source, original prompt or search
+query, license information, generation settings, creation date, and
+validation status. Do not reuse an asset with incompatible licensing.
+
+## 8C.4 Intelligent generation batching
+
+Where supported by a provider: batch image-generation requests, reuse
+consistent style references, group related visual-generation tasks, avoid
+regenerating already approved assets, and generate only missing assets.
+Respect provider-specific concurrency limits. Do not launch unlimited
+parallel jobs.
+
+## 8C.5 Retry management
+
+Implement bounded retries with a recommended default maximum of 3 attempts
+per asset-generation task, exponential backoff for temporary failures, no
+retries for invalid credentials, and no repeated retries for permanent
+licensing or permission errors. Stop when a documented rate limit requires
+waiting. Record every failed request. Do not endlessly retry a failing
+provider.
+
+## 8C.6 Adaptive resolution
+
+Select resolutions according to final output requirements. Do not upscale
+low-quality footage and classify it as high-quality source material.
+
+## 8C.7 Render optimization
+
+Render scene segments independently, reuse validated intermediate renders,
+avoid unnecessary re-encoding, use hardware acceleration only when verified
+and supported, manage temporary files, monitor disk space, and avoid
+unnecessary full-project rerenders. If only one scene changes, rebuild only
+the affected scene and dependent segments.
+
+## 8C.8 Storage management
+
+Before production: check available storage, estimate intermediate asset size,
+check output-directory capacity, and avoid unnecessary duplicate files.
+After successful final delivery: preserve source assets, final render, and QA
+reports; remove only disposable temporary files; never delete the only copy
+of an approved asset.
 
 # 9. REAL ANIMATION AND CINEMATOGRAPHY
 
@@ -520,18 +935,13 @@ Do not use these voices even as emergency fallbacks.
 
 Priority order:
 
-1.  ElevenLabs premium neural voices.
-2.  Microsoft Azure Neural TTS.
-3.  Google Cloud Neural TTS.
-4.  High-quality local neural TTS such as Kokoro, if available.
-5.  Another verified natural neural TTS provider.
+1.  High-quality local neural TTS such as Kokoro, if available and
+    verified.
+2.  Another verified natural neural TTS provider.
 
 Example voice candidates:
 
--   ElevenLabs: Adam or another appropriate natural male voice.
--   Azure: ChristopherNeural, AndrewNeural, or another suitable voice.
--   Google: Neural2-D or a comparable available male voice.
--   Kokoro: a suitable available male voice.
+-   Kokoro: a suitable available and verified male voice.
 
 Verify actual voice identifiers before using them.
 
@@ -745,7 +1155,6 @@ Recommended tools:
 
 -   FFmpeg.
 -   MoviePy.
--   Blender.
 -   Remotion.
 -   Python.
 -   SVG animation tools.
@@ -1019,6 +1428,37 @@ Immediately reject the video if:
 
 Fix the issue and rerender.
 
+## F. Stock media QA requirements
+
+Extend QA to stock media. Verify:
+
+1.  Every stock asset matches its assigned narration.
+2.  The source URL is recorded.
+3.  License conditions have been checked.
+4.  Attribution requirements are respected.
+5.  No watermarked media is present.
+6.  No duplicate footage is unnecessarily repeated.
+7.  Stock footage does not contradict the narration.
+8.  Archival footage is not misrepresented.
+9.  Stock photographs are not presented as actual video footage.
+10. Generated and stock assets are correctly identified in the production
+    report.
+
+Create:
+
+`qa/stock-media-audit.md`
+
+## G. Additional rejection criteria for stock media
+
+Immediately reject the video if:
+
+-   A stock asset does not match its assigned narration.
+-   A watermarked or unlicensed stock asset was used.
+-   A source URL or license condition is missing.
+-   Archival footage is misrepresented as original footage.
+-   A stock photograph is presented as actual video footage.
+-   An unverified asset was used in commercial production.
+
 # 16. FINAL DELIVERY REQUIREMENTS
 
 Save the final video:
@@ -1032,6 +1472,7 @@ Generate:
 
 -   `qa/inspection.md`
 -   `qa/issues.md`
+-   `qa/stock-media-audit.md`
 
 The inspection report must contain:
 
@@ -1044,9 +1485,44 @@ The inspection report must contain:
 -   Narration voice.
 -   Visual asset count.
 -   Animated scene count.
+-   Total stock videos used.
+-   Total stock images used.
+-   Total AI-generated images.
+-   Total AI-generated videos.
+-   Total original animated scenes.
+-   Total licensed archival assets.
+-   Unverified assets, which must be zero for assets used in commercial
+    production.
 -   QA findings.
 -   Known limitations.
 -   Any fallbacks.
+
+## Production directories
+
+The production directory convention must include:
+
+```text
+assets/
+  stock/
+    images/
+    videos/
+    stock-asset-registry.json
+    attribution-report.md
+
+  generated/
+    images/
+    videos/
+
+  references/
+
+preproduction/
+  provider-registry.json
+  resource-budget.md
+  scene-asset-plan.json
+
+qa/
+  stock-media-audit.md
+```
 
 Do not assign an arbitrary quality score.
 
@@ -1087,5 +1563,364 @@ The sound design should reinforce the experience.
 
 The final result should be something worth publishing, not merely
 something that technically plays.
+
+
+# 19. MODULAR PRODUCTION PIPELINE (OPENMONTAGE-INTEGRATED)
+
+The production is organised into eleven independently manageable,
+checkpointed stages. Each stage declares explicit inputs, outputs,
+validation rules, retry policy, and preserved artifacts. Stages are NOT
+restarted unless invalid.
+
+Stage list and contract:
+
+1. Script and narration.
+   - Input: verified research outputs + topic.
+   - Output: `audio/narration/script.txt`, phrase-level JSON; timings JSON
+     produced in stage 8.
+   - Validation: 125–150 words for ~60s, natural spoken English, no filler.
+   - Retry: rewrite script only; preserve research.
+
+2. Storyboard and visual bible.
+   - Input: script + research.
+   - Output: `preproduction/storyboard.json` (8–12 scenes with scene_id,
+     narration_span, visual_job, asset_category, relevance_test, camera move
+     name, transition, duration) plus visual bible (art direction, palette,
+     lighting, camera language, composition, materials, typography,
+     animation language, transition style).
+   - Validation: every scene has relevance_test sentence; >=4 distinct asset
+     categories; cloud images <=60%; >=2 SVG/Remotion motion-graphic scenes.
+   - Retry: re-plan storyboard only.
+
+3. Scene asset planning.
+   - Input: storyboard.
+   - Output: `preproduction/scene-asset-plan.json` (existing contract 7B).
+   - Validation: every scene has preferred/alternative asset type, stock
+     queries, visual requirements.
+   - Retry: rebuild plan only; preserve storyboard.
+
+4. Stock acquisition and validation.
+   - Input: scene-asset-plan.
+   - Output: downloaded licensed assets under `assets/stock/`, registry,
+     attribution report.
+   - Validation: source URL, license, resolution, no watermark, no duplicate.
+   - Retry: re-acquire failed scenes only; cache validated hits.
+
+5. Asset-gap detection.
+   - Input: storyboard + available stock assets.
+   - Output: `preproduction/asset-gap-report.json` (scenes with no/weak
+     visual, insufficient duration, excessive static images, redundant use).
+   - Validation: every scene covered; gaps classified; no generation when
+     adequate stock exists.
+   - Retry: re-run coverage analysis only.
+
+6. AI image/video generation.
+   - Input: asset-gap report; scenes needing generated imagery/motion.
+   - Output: `assets/generated/images/*`, `assets/generated/videos/*`,
+     generation logs.
+   - Validation: visual quality gate (8); files exist and play; no artifact.
+   - Retry: regenerate failed scenes only; bounded 3 attempts.
+
+7. Original animation and composition.
+   - Input: storyboard + assets + visual bible.
+   - Output: original animated diagrams, SVG/Remotion compositions, per-scene
+     motion layers under `work/[topic]/work_segments/`.
+   - Validation: real motion present; no fake/static-only animation; motion
+     budget met.
+   - Retry: rebuild affected compositions only.
+
+8. Audio mastering and captions.
+   - Input: script + scene timings.
+   - Output: `audio/narration/narration-master.wav`,
+     `audio/narration/voice-audition.wav`, timings JSON, music stems, SFX,
+     `captions/captions.srt`, `captions/captions.ass`.
+   - Validation: neural voice verified, loudness -16 LUFS, no clipping; cue
+     boundaries within 80 ms; max 42 chars/line; <=2 lines.
+   - Retry: regenerate audio/captions only; preserve visuals.
+
+9. Editing and timeline assembly.
+   - Input: validated assets + timings + storyboard + compositions.
+   - Output: per-scene renders `work/[topic]/work_segments/scene-*.mp4`,
+     `assembled-video.mp4`, `assembled-timeline.json`.
+   - Validation: per-scene FFprobe; no black frames; motion budget; scene
+     durations aligned to narration boundaries.
+   - Retry: rebuild affected scenes/segments only.
+
+10. Final rendering.
+    - Input: assembled video + mastered audio + captions.
+    - Output: `output/explainer-[slug].mp4`.
+    - Validation: codec/resolution/fps/duration/bitrate checks.
+    - Retry: re-encode only; do not re-run earlier stages.
+
+11. QA and delivery.
+    - Input: final video + all manifests.
+    - Output: `qa/inspection.md`, `qa/issues.md`, `qa/stock-media-audit.md`,
+      `qa/qa-report.json`, production report.
+    - Validation: all rejection criteria pass; unverified assets == 0.
+    - Retry: repair only affected components, then re-run 9–11.
+
+Stage execution rules:
+- The orchestrator MUST keep a single `production-state.json` (schema below)
+  as the source of truth.
+- Completed and validated stages are SKIPPED on resume.
+- Failed stages are retried with bounded attempts; independent scenes run
+  concurrently when safe.
+- Completed assets are preserved; never regenerate a validated asset.
+- Every stage writes an append-only log:
+  `work/[topic]/logs/stage-NN-<name>.log`.
+- Stage transitions record timestamp, duration, inputs hash, outputs list.
+
+# 20. INTELLIGENT AGENT ORCHESTRATION (OPENMONTAGE-INTEGRATED)
+
+The master orchestrator coordinates the following specialized agents. Do
+not spawn an agent when a deterministic module suffices; reuse helper
+scripts (`horde_image_gen.py`, `kokoro_tts.py`) instead.
+
+- Research agent: verifies factual claims, gathers and cites sources.
+- Script agent: writes engaging narration.
+- Storyboard agent: translates narration into 8–12 scenes.
+- Visual researcher: finds relevant footage/images across providers.
+- Asset generation agent: creates missing visuals via verified providers.
+- Audio agent: narration, music bed, SFX, mastering.
+- Editing agent: assembles timeline and renders.
+- QA agent: evaluates rendered output and emits repair targets.
+
+Orchestrator duties:
+- Assign tasks by dependency graph (stage order above).
+- Run independent tasks concurrently with configurable limits (default:
+  downloads <=4, image gen <=2, video gen <=1).
+- Prevent duplicate work via content-hash dedup and completed-stage skip.
+- Pass STRUCTURED outputs (JSON manifests) between stages, never prose.
+- Detect missing dependencies before executing a stage.
+- Handle provider failures with documented fallbacks; on total failure of a
+  required capability, STOP and report (failure policy 17).
+- Maintain single source of truth: `production-state.json`.
+
+# 21. INTELLIGENT ASSET ACQUISITION (ORDER AND PROVIDERS)
+
+Unified asset acquisition priority (highest to lowest):
+
+1. Relevant high-quality stock videos.
+2. Relevant stock photographs/illustrations.
+3. Public-domain / appropriately licensed archival media.
+4. AI-generated images (verified providers only).
+5. AI-generated video.
+
+Use available providers where configured, in this preference:
+- Pexels API
+- Pixabay API (`PIXABAY_API_KEY`, verified primary)
+- Unsplash API
+- Wikimedia Commons
+- Internet Archive
+- NASA media resources
+
+Rules:
+- Search per SCENE description, never just the overall topic.
+- Match assets to narration timestamps (`scene_id` binding).
+- Evaluate relevance, resolution, aspect ratio, duration, quality.
+- Reject duplicate footage, watermarks, low quality.
+- Record source URL, attribution, license in the manifest (8B.6).
+- Cache downloaded assets; dedup by content hash.
+- NEVER claim an asset downloaded/generated unless file exists and is valid.
+- For each scene, write an asset-selection report explaining why the
+  selected visual matches the narration
+  (`assets/asset-selection-report.md` or per-scene JSON).
+
+Additional provider notes (only if verified available):
+- Wikimedia Commons: use the public MediaWiki API; respect licensing per file.
+- Internet Archive: use the advanced search API; verify usage rights.
+- NASA: use https://images.nasa.gov API; content is generally public domain
+  but verify each item's license metadata.
+
+No silent switching to a paid provider; no hotlinking permanent images.
+
+# 22. ASSET GAP DETECTION
+
+Implement visual-coverage analysis before generating anything:
+
+Compare storyboard vs. available assets. Produce
+`preproduction/asset-gap-report.json` listing:
+- scenes with no visual
+- scenes with weakly relevant visual
+- scenes with insufficient footage duration
+- scenes relying excessively on static images
+- repeated/redundant asset usage
+
+Only generate replacement assets when existing assets cannot satisfy scene
+requirements. Never generate images/videos when adequate stock exists.
+
+Gap-driven rules:
+- stock video present and relevant -> use it; do NOT generate.
+- stock image only and scene needs motion -> add Remotion motion (parallax,
+  Ken Burns) but do not fabricate motion claims.
+- no adequate stock -> generate ONE candidate, validate before use.
+
+# 23. PRODUCTION STATE AND RECOVERY (CHECKPOINT SCHEMA)
+
+Persist `work/[topic]/production-state.json` with this schema:
+
+```json
+{
+  "topic": "string",
+  "slug": "string",
+  "created_at": "ISO8601",
+  "updated_at": "ISO8601",
+  "current_stage": 1,
+  "stages": {
+    "1": {"name":"research","status":"completed|pending|failed|skipped","started_at":"","finished_at":"","attempts":0,"inputs_hash":"","outputs":[]}
+  },
+  "completed_stages": [],
+  "pending_stages": [],
+  "failed_operations": [],
+  "downloaded_assets": [],
+  "generated_assets": [],
+  "api_usage": {"requests":0,"estimated_cost_usd":0.0,"actual_charges_usd":null,"providers":{}},
+  "rendering_progress": {"percent":0,"current_scene":null,"output_path":null},
+  "qa_results": {"visual":null,"audio":null,"technical":null,"content":null,"passed":false},
+  "checkpoints": []
+}
+```
+
+Checkpoint files:
+- `work/[topic]/checkpoints/stage-NN-<name>.json` snapshot after each stage.
+- Resume: load state, skip completed+validated stages, reprocess failed/invalid only.
+- A failed render MUST NOT require re-running research, scripting, or asset
+  acquisition; restart from stage 9/10 with preserved assets.
+- Avoid regenerating narration/visuals unless invalidated.
+
+# 24. RESOURCE AND API OPTIMIZATION (EXTENSION)
+
+Extend existing 8C with:
+- Estimate production requirements before execution (resource-budget.md).
+- Prefer free providers when quality acceptable (already: Horde anonymous,
+  Pixabay, NASA).
+- Cache provider responses 24h+ and downloads indefinitely by content hash.
+- Dedup requests by (provider, query, filters).
+- Concurrent downloads with configurable limit (default 4).
+- Memory/CPU awareness: render per scene, avoid full-project rerenders.
+- Limit excessive parallel AI-gen requests (images <=2, videos <=1).
+- Use local processing when practical (Kokoro, Remotion, FFmpeg).
+- Adaptive resolution: do not upscale low-quality sources.
+- Never silently switch to paid provider; require explicit approval and record
+  in state before any charge.
+
+# 25. TIMELINE AND SCENE COMPOSITION (STRUCTURED)
+
+Every scene object in `assembled-timeline.json` MUST contain:
+- scene_id
+- narration_segment (verbatim)
+- start_time, end_time (seconds, 0.1 precision)
+- duration_seconds
+- visual_assets (list with source path/URL)
+- asset_source (stock|generated|archival|motion_graphic)
+- transition (type + duration frames)
+- motion_instructions (named camera move, per cinematic standard)
+- subtitle_segment (text + cue ids)
+- audio_instructions (music level, SFX list)
+
+Validation:
+- scene durations correspond to narration phrase boundaries.
+- transitions natural; audio no abrupt cuts; subtitles sync (<=80 ms).
+- no unintended black frames/empty scenes; pacing matches narration.
+
+Use Remotion + FFmpeg; no new render engines.
+
+# 26. INTELLIGENT EDITING DECISION RULES
+
+Editing agent determines per scene:
+- when footage should change
+- close-up vs wide shot
+- image pan/zoom vs static
+- motion graphics usage
+- text overlays
+- subtle vs emphasized transition
+- B-roll reinforcement of narration
+
+Avoid identical transitions/zooms/animations across scenes. Maintain visual
+consistency but allow scene-specific creativity. Preserve all prohibitions
+against fake animation and low-quality fallbacks (section 2/9).
+
+# 27. QA EXTENSION (THRESHOLDS AND REPAIR TARGETS)
+
+Post-render QA must produce `qa/qa-report.json` with per-category results and
+specific repair target (stage id + scene ids). Categories as in section 15
+extended with explicit thresholds:
+- black frames: reject any (blackdetect params section 15).
+- frozen frames: reject >=0.75s.
+- caption/audio desync: reject >80 ms.
+- loudness: reject outside -16 LUFS +/-1 or TP > -1 dBTP.
+- unverified assets used: reject if >0.
+- factual/visual mismatch: reject with scene list.
+
+Repair policy: fix only affected components, then rerun stages 9–11. Do not
+declare ready merely because FFmpeg succeeded.
+
+# 28. PRODUCTION REPORT (SCHEMA)
+
+Generate `preproduction/production-report.md` (or `output/production-report.md`)
+for every completed project including:
+- Video title
+- Total duration
+- Resolution and FPS
+- Number of scenes
+- Stock videos used
+- Stock images used
+- AI-generated assets count (images/videos)
+- Narration provider + voice id
+- Music and SFX sources
+- Total API requests
+- Estimated production cost (clearly estimated, not actual)
+- Actual provider-reported charges (if available; else null)
+- Failed/skipped operations
+- QA results
+- Output file location
+
+Distinguish estimated vs actual charges explicitly.
+
+# 29. DIRECTORY CONVENTION (EXTENDED)
+
+In addition to section 16:
+
+```
+work/[topic]/
+  production-state.json
+  checkpoints/
+  logs/
+  preproduction/
+    storyboard.json
+    scene-asset-plan.json
+    asset-gap-report.json
+    resource-budget.md
+    provider-registry.json
+    environment-report.md
+  assets/
+    stock/... (existing)
+    generated/images, videos
+    asset-selection-report.md (or .json)
+  qa/
+    qa-report.json
+  output report
+```
+
+# 30. IMPLEMENTATION AND CHANGE REPORT
+
+When implementing this upgrade:
+1. Inspect existing skill and tools (done).
+2. Map existing capabilities already satisfying requirements:
+   - env discovery/provider registry (3.x), adapter architecture (3.2),
+     Pixabay adapter (8B.1), stock integration (8B), resource optimization
+     (8C), Remotion (13B), QA (15), failure policy (17) already present.
+3. Missing added by this upgrade: explicit modular stage contracts,
+   structured production-state/checkpoints, asset acquisition order including
+   Wikimedia/Archive/NASA, gap detection, timeline schema, editing decision
+   rules, QA thresholds/repair targets, production report schema.
+4. Duplicates avoided: new sections reference existing ones rather than
+   redefining Pixabay specifics or QA visual checks.
+5. No existing working functionality removed.
+6. Validate existing workflows unchanged (scripts and Remotion untouched).
+
+Change report location:
+`work/[topic]/preproduction/change-report.md` for per-run, plus this skill
+revision itself serves as the global change report.
 
 END OF SKILL
