@@ -1,0 +1,30 @@
+{
+  "topic": "",
+  "slug": "",
+  "created_at": "",
+  "updated_at": "",
+  "current_stage": 1,
+  "stages": {
+    "1": {"name": "research", "status": "pending", "started_at": "", "finished_at": "", "attempts": 0, "inputs_hash": "", "outputs": []},
+    "2": {"name": "script", "status": "pending", "started_at": "", "finished_at": "", "attempts": 0, "inputs_hash": "", "outputs": []},
+    "3": {"name": "storyboard", "status": "pending", "started_at": "", "finished_at": "", "attempts": 0, "inputs_hash": "", "outputs": []},
+    "4": {"name": "scene_planning", "status": "pending", "started_at": "", "finished_at": "", "attempts": 0, "inputs_hash": "", "outputs": []},
+    "5": {"name": "stock_acquisition", "status": "pending", "started_at": "", "finished_at": "", "attempts": 0, "inputs_hash": "", "outputs": []},
+    "6": {"name": "ai_image_generation", "status": "pending", "started_at": "", "finished_at": "", "attempts": 0, "inputs_hash": "", "outputs": []},
+    "7": {"name": "ai_video_generation", "status": "pending", "started_at": "", "finished_at": "", "attempts": 0, "inputs_hash": "", "outputs": []},
+    "8": {"name": "narration_audio", "status": "pending", "started_at": "", "finished_at": "", "attempts": 0, "inputs_hash": "", "outputs": []},
+    "9": {"name": "subtitles", "status": "pending", "started_at": "", "finished_at": "", "attempts": 0, "inputs_hash": "", "outputs": []},
+    "10": {"name": "composition_editing", "status": "pending", "started_at": "", "finished_at": "", "attempts": 0, "inputs_hash": "", "outputs": []},
+    "11": {"name": "rendering_encoding", "status": "pending", "started_at": "", "finished_at": "", "attempts": 0, "inputs_hash": "", "outputs": []},
+    "12": {"name": "qa_delivery", "status": "pending", "started_at": "", "finished_at": "", "attempts": 0, "inputs_hash": "", "outputs": []}
+  },
+  "completed_stages": [],
+  "pending_stages": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+  "failed_operations": [],
+  "downloaded_assets": [],
+  "generated_assets": [],
+  "api_usage": {"requests": 0, "estimated_cost_usd": 0.0, "actual_charges_usd": null, "providers": {}},
+  "rendering_progress": {"percent": 0, "current_scene": null, "output_path": null},
+  "qa_results": {"visual": null, "audio": null, "technical": null, "content": null, "passed": false},
+  "checkpoints": []
+}
