@@ -36,6 +36,24 @@ workspace: /home/droid/stuffs
 
 ## Premium Documentary Production Engine
 
+# 0. ROLE AND RESPONSIBILITY (SINGLE RESPONSIBILITY)
+
+This skill is the **PRODUCTION EXECUTOR**. Its single responsibility is
+executing an approved orchestration manifest: environment capability use,
+provider adapters, asset acquisition/generation, timeline assembly,
+rendering, and quality reporting. It does not author research, narration,
+or creative direction; those are supplied by the master orchestrator.
+
+Owns:
+- Provider discovery and adapter execution.
+- Stock acquisition and validation.
+- Asset-gap execution and generation.
+- Animation/composition/rendering.
+- Audio mastering and captions mechanical production.
+- Technical and semantic QA execution/reporting.
+
+Returns structured results to the master orchestrator for verification.
+
 # 1. YOUR ROLE
 
 You are a professional documentary production studio consisting of:
@@ -391,11 +409,11 @@ Reject the asset if it cannot pass its relevance_test. No generic
 "mood" imagery and no image that merely looks cinematic without
 explaining the current narration.
 
-## Visual asset mix (mandatory)
+## Visual asset mix (semantic, no artificial quotas)
 
-For an 8--12 scene production, use at least four distinct asset
-categories. Cloud-generated images may not exceed 60% of scenes.
-At least two scenes must use SVG/Remotion or infographic motion graphics.
+Choose asset categories by semantic fit, not by mandated counts. Diversity,
+progression, anti-repetition, and motion graphics are required only when they
+improve understanding. Predominantly real-world footage is acceptable.
 No cloud image may be reused unless it is deliberately reframed and its
 reuse is justified in the storyboard.
 
@@ -846,9 +864,8 @@ Preferred techniques:
 -   Animated labels.
 -   Motion graphics.
 
-At least 50% of the final runtime should contain meaningful visual
-movement through generated footage, procedural animation, 3D animation,
-or carefully animated compositions.
+Movement is required only where it explains the subject or supports the
+narrative. Do not maintain a fixed 50% motion runtime quota.
 
 Do not count subtitle movement as meaningful visual animation.
 
@@ -1588,8 +1605,8 @@ Stage list and contract:
      name, transition, duration) plus visual bible (art direction, palette,
      lighting, camera language, composition, materials, typography,
      animation language, transition style).
-   - Validation: every scene has relevance_test sentence; >=4 distinct asset
-     categories; cloud images <=60%; >=2 SVG/Remotion motion-graphic scenes.
+   - Validation: every scene has relevance_test sentence; semantic relevance
+     scores meet thresholds; no artificial category/motion quotas.
    - Retry: re-plan storyboard only.
 
 3. Scene asset planning.
@@ -1923,103 +1940,116 @@ Change report location:
 `work/[topic]/preproduction/change-report.md` for per-run, plus this skill
 revision itself serves as the global change report.
 
+# 31. SEMANTIC VISUAL SELECTION (CORE)
+
+Semantic visual selection is a core production requirement, not an
+appendix. For each narration segment extract:
+- Main subject.
+- Supporting subject.
+- Environment.
+- Visual action.
+- Cause/effect or mechanism.
+- Abstract concepts.
+- Intended viewer understanding.
+- Required on-screen visual.
+- Misleading visuals to avoid.
+
+Create a per-scene visual spec including narration_span, visual_job,
+asset_category, and relevance_test. Example: narration about a lottery
+ticket requires a person holding a lottery ticket and the numbers, not
+particle/grid imagery.
+
+Semantic relevance scoring (0-100) uses actual visual content, not
+filenames, tags, or keywords:
+- Subject: 25
+- Action: 20
+- Object: 15
+- Context/environment: 15
+- Narrative contribution: 15
+- Visual clarity: 10
+
+Thresholds:
+- 90-100: excellent, accept.
+- 80-89: acceptable, accept with review.
+- Below 80: reject and search again or reject outright.
+No cinematic quality score may compensate for a semantically irrelevant
+visual.
+
+Visual selection hierarchy by semantic need:
+1. Relevant high-quality stock video.
+2. Relevant stock images or licensed archival footage.
+3. Original AI image/video where needed.
+4. 3D/procedural visualization where needed.
+5. Motion graphics as supporting explanation only.
+Do not prioritize AI generation over suitable stock. Do not generate to
+satisfy a removed quota.
+
+Reject repeated backgrounds, particles, grids, futuristic backgrounds,
+unnecessary charts, repetitive zoom, generic stock, and keyword-only
+matches. Require meaningful progression and new information each scene.
+
+# 32. PRODUCTION CONTRACT (MASTER TO EXECUTOR)
+
+Master orchestrator supplies:
+- Topic and slug.
+- Research and sources.
+- Narration script and phrase timings.
+- Visual bible.
+- Storyboard with scene bindings.
+- Scene-asset plan and visual requirements.
+- Timing and continuity constraints.
+- Approval/rework decisions.
+
+Production executor returns:
+- Asset registry with scores and provenance.
+- Selected asset paths and scene render paths.
+- Timeline manifest (assembled-timeline.json).
+- QA results and repair targets (qa/qa-report.json).
+- Failed operations and known limitations.
+- Production report.
+
+The master orchestrator verifies execution results before completion. The
+executor must not alter creative direction or narration.
+
+# 33. FRAME-LEVEL SEMANTIC QA
+
+Inspect actual rendered frames against narration, storyboard, intended
+visual spec, and scene binding. Compare visible subject/action to the
+intended visual. Record machine-readable results in qa/qa-report.json with
+per-scene verdicts and repair targets (stage id + scene ids).
+
+If no frame inspection capability is available, do not claim verification;
+record the limitation and repair targets. Reject semantic mismatches even
+when technically valid. Preserve unaffected scenes during repair.
+
+# 34. END-TO-END REGRESSION TEST (ABSOLUTE PROBABILITY PERCEPTION)
+
+Regression test topic: "Absolute Probability Perception: The ability to
+see a guaranteed successful outcome."
+
+Expected visual progression:
+1. Person holding a lottery ticket.
+2. Close-up of lottery numbers.
+3. Person perceiving a guaranteed win.
+4. Probability display rising to 100%.
+5. Sequence of possible outcomes.
+6. Real-world consequence.
+7. Cinematic conclusion.
+
+Requirements:
+- Lottery narration maps to lottery visuals.
+- Human actions map to relevant humans.
+- Probability explanations use understandable visuals.
+- Abstract animation is not a substitute for concrete objects.
+- No unrelated stock footage.
+- No filler graphics to satisfy removed quotas.
+- Inspect the rendered video, not just the storyboard.
+
+# 35. HONEST REPORTING
+
+Report modified files, reused capabilities, conflicts removed, semantic
+scoring results, frame inspection results, regression test results, and
+limitations. No documentation-only success claims. A failed production is
+preferable to a falsely successful production.
+
 END OF SKILL
-
-# APPENDIX U: ORCHESTRATION AND SEMANTIC VISUAL PRODUCTION UPGRADE
-
-## U.1 Skill responsibilities
-
-Main skill is the master orchestrator: research, creative direction, narrative, planning, discovery/delegation, checkpoint review.
-Output skill is production specialist: executes supplied plan, providers/assets/render/QA, returns structure.
-
-## U.2 Skill discovery/delegation
-
-At start, discover installed skills from `~/.claude/skills/` and repository `skills/`. Read names/descriptions, match to production responsibilities (research, scripting, storyboard, visual, audio, render, QA). Invoke only relevant, record manifest `production-state.json.skill_discovery`. Never claim invocation without completion.
-
-## U.3 Narration-first semantic visual planning
-
-For each narration segment extract subject, objects, env, actions, cause-effect, abstract concepts, viewer understanding, required on-screen visual, misleading visuals. Create per scene visual spec including relevance_test. Example lottery ticket, not particles.
-
-## U.4 Semantic asset evaluation
-
-Score 0-100: subject, object, action, environment, relevance, clarity, accuracy, cinematic, duration, technical. Policy: 90-100 excellent, 80-89 acceptable, 65-79 review, <65 reject. High technical never compensates low semantic.
-
-## U.5 Stock footage acquisition
-
-Reuse existing provider adapters; do not duplicate. Search separately per scene with contextual queries, evaluate relevance before download, validate license and cache. No undocumented APIs.
-
-## U.6 Visual selection hierarchy
-
-Preferred per semantic need: relevant stock video, stock photo/archival, original AI video, AI image, 3D/procedural animation, SVG/Remotion diagrams/supporting graphics. Abstract only for abstract concepts.
-
-## U.7 Scene diversity
-
-Reject repeated backgrounds/particles/grids/motion/camera/composition. Require new visual info each scene; keep continuity where natural.
-
-## U.8 Frame-level semantic QA
-
-Inspect frames against narration and intended visual; compare actual visible subject/action. Where no vision capability exists, do not pretend verified; record limitation and repair targets.
-
-## U.9 Pipeline integration
-
-Keep 11-stage checkpoint pipeline. Integrate semantic validation in storyboard, asset plan, acquisition, gaps, generation, animation, assembly, final QA. Preserve cached assets and completed stages.
-
-## U.10 End-to-end test topic
-
-Test: "Absolute Probability Perception: The ability to see a guaranteed successful outcome."
-Expected visual progression: person holding lottery ticket -> close-up numbers -> person perceives guaranteed win -> probability display to 100% -> sequence possible outcomes -> real-world consequence -> cinematic conclusion. Distinguish imagined from factual. Do not use grids/particles as substitute.
-
-## U.11 Deliverables
-
-Updated main skill and output skill, skill discovery/delegation, semantic visual-selection, validation, QA, sample production manifest schema, and end-to-end test notes. No third full-visual skill.
-
-## U.12 Implementation rules
-
-Inspect before change, preserve integrations, avoid placeholders, no invent APIs, no remove checkpoints, no paid without approval.
-
-# FOLLOW-UP PATCH: COMPLETE MAIN-TO-OUTPUT SKILL INTEGRATION
-
-## P1 Asset policy synchronization
-
-Main skill owns creative direction and scene-level requirements. Output skill executes approved scene-asset plan. Priority order:
-1. relevant high-quality stock video
-2. relevant stock images/archival footage
-3. original AI imagery/video where needed
-4. original 3D/procedural visualization where needed
-5. motion graphics as supporting explanations only
-Do not prioritize AI generation over suitable stock. Do not generate just to meet quota.
-
-## P2 Semantic relevance scoring
-
-Rubric (0-100): subject 25, action 20, object 15, context/environment 15, narrative 15, visual clarity 10. Accept: 90-100 excellent, 80-89 acceptable, 65-79 reject and search again, below 65 reject. Score based on actual visual content, not filenames/tags/keywords.
-
-## P3 Actual visual verification
-
-Inspect representative frames for video; inspect generated images for subject/object/composition. If unavailable, report limitation; never fabricate verification.
-
-## P4 Remove artificial quotas
-
-Remove mandatory asset-category/motion-graphic scene counts where conflicting. Require diversity, progression, anti-repetition, and motion graphics only when they improve understanding. Predominantly real-world footage is acceptable.
-
-## P5 Execution contract
-
-Main supplies narration, storyboard, visual bible, scene visual requirements, timing, continuity, constraints. Output returns asset registry, selection scores, scene render paths, timeline manifest, QA, failed ops, repair targets. Main verifies execution result before completion.
-
-## P6 Semantic final-video QA
-
-Compare original narration, storyboard, selected asset, rendered frames. Reject semantically unrelated but pretty scenes. Provide repair instructions and preserve unaffected scenes.
-
-## P7 Regression test
-
-Test on Absolute Probability Perception:
-- lottery narration -> lottery visuals
-- human actions -> relevant humans
-- probability explanations -> understandable visuals
-- abstract animation not a substitute for concrete objects
-- no unrelated stock footage
-- no filler graphics to satisfy quotas
-- inspect rendered video, not just storyboard.
-
-## P8 Honest reporting
-
-Report modified files, reused capabilities, conflicts resolved, and limitations. No false success.
