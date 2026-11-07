@@ -277,201 +277,29 @@ Environmental movement. - Biological visualization.
 
 Do not force the same visual style onto every topic.
 
-# 5. RESEARCH AND FACTUAL ACCURACY
+# 5. EXECUTION INPUTS (SUPPLIED BY MASTER ORCHESTRATOR)
 
-Research the subject before developing the narrative.
+The executor does not author research, narration, or creative direction.
+Consume the artifacts supplied under the contract in section 32:
+- `research/research.md`, `research/sources.md`
+- `audio/narration/script.txt` and phrase timings
+- visual bible and storyboard (`preproduction/storyboard.json`)
+- `preproduction/scene-asset-plan.json`
+- timing/continuity constraints
+- approval/rework decisions
+- canonical semantic scoring model (main SKILL.md section 7)
 
-Identify:
+## 6. SEMANTIC SCORING (CANONICAL, DO NOT REDEFINE)
 
--   Core concept.
--   Important entities.
--   Components.
--   Processes.
--   Cause-and-effect relationships.
--   Scientific mechanisms.
--   Important discoveries.
--   Common misconceptions.
--   Practical implications.
+Apply the semantic relevance scoring and thresholds defined by the master
+orchestrator (main SKILL.md). This document does not redefine them; if a
+conflict is found, the master's model prevails.
 
-Use credible sources.
+## 7. VISUAL DIRECTOR INPUT
 
-Prioritize primary documentation, scientific publications, government
-institutions, and reputable educational references.
-
-For factual subjects, maintain source URLs.
-
-Do not invent facts to make the story more interesting.
-
-For scientific and anatomical subjects, verify the physical mechanisms
-before creating visualizations.
-
-Save:
-
--   `research/research.md`
--   `research/sources.md`
-
-# 6. NARRATIVE DEVELOPMENT
-
-Create a compelling narrative.
-
-Default runtime: approximately 60 seconds.
-
-Recommended structure:
-
-**ACT 1 --- THE HOOK (0--8 seconds)**
-
-Open with an interesting visual and an immediately compelling statement.
-
-**ACT 2 --- THE CONTEXT (8--20 seconds)**
-
-Introduce the subject and establish the problem or concept.
-
-**ACT 3 --- THE REVELATION (20--48 seconds)**
-
-Demonstrate how the subject works.
-
-This is the most visually important section.
-
-**ACT 4 --- THE PAYOFF (48--60 seconds)**
-
-Connect the information and leave the viewer with one memorable
-takeaway.
-
-Script requirements:
-
--   Approximately 125--150 words for a 60-second production, adjusting to
-    actual delivery.
--   Natural spoken English.
--   Short, understandable sentences.
--   No unnecessary repetition.
--   No article-like narration.
--   No exaggerated clickbait.
--   No meaningless filler.
--   Correct pronunciation of technical terminology.
-
-Write for the ear, not the page.
-
-Every scene must have a purpose.
-
-# 7. VISUAL DIRECTOR
-
-The visual director must plan the entire documentary before asset
-generation.
-
-Create a visual bible containing:
-
--   Art direction.
--   Color palette.
--   Lighting.
--   Camera language.
--   Composition.
--   Materials.
--   Typography.
--   Animation language.
--   Transition style.
-
-Create a storyboard containing 8--12 carefully designed scenes.
-
-Each scene must specify:
-
--   Scene identifier.
--   Narration.
--   Duration.
--   Visual objective.
--   Main subject.
--   Shot type.
--   Camera angle.
--   Camera movement.
--   Lighting.
--   Animation.
--   On-screen labels.
--   Sound effects.
--   Transition.
--   Asset requirements.
-
-Avoid repetitive compositions.
-
-The audience must receive new visual information throughout the video.
-
-## Visual relevance binding (mandatory)
-
-Every visual asset must be bound to an exact narration span before
-generation. Store this binding in the storyboard:
-
--   `scene_id`
--   `narration_span` (verbatim phrase or sentence)
--   `visual_job` (what the viewer must learn from the asset)
--   `asset_category` (`cloud_image`, `free_stock_footage`,
-    `svg_illustration`, `diagram`, `infographic`, `motion_graphic`)
--   `relevance_test` (one sentence: "This image shows X because Y")
-
-Reject the asset if it cannot pass its relevance_test. No generic
-"mood" imagery and no image that merely looks cinematic without
-explaining the current narration.
-
-## Visual asset mix (semantic, no artificial quotas)
-
-Choose asset categories by semantic fit, not by mandated counts. Diversity,
-progression, anti-repetition, and motion graphics are required only when they
-improve understanding. Predominantly real-world footage is acceptable.
-No cloud image may be reused unless it is deliberately reframed and its
-reuse is justified in the storyboard.
-
-# 7B. SCENE-LEVEL ASSET DECISION ENGINE
-
-Each scene must receive an explicit asset strategy before asset creation.
-Save these decisions in:
-
-`work/[topic]/preproduction/scene-asset-plan.json`
-
-Each entry must include at minimum:
-
--   `scene_id`
--   `narration`
--   `visual_subject`
--   `visual_action`
--   `preferred_asset_type`
--   `alternative_asset_type`
--   `animation_required`
--   `stock_search_queries`
--   `visual_requirements`
--   `narration_span`
--   `visual_job`
--   `asset_category`
--   `relevance_test`
--   selected provider or generation method
--   selection rationale
-
-Example:
-
-```json
-{
-  "scene_id": "SCENE_004",
-  "narration": "Inside every modern data center...",
-  "visual_subject": "Data center infrastructure",
-  "visual_action": "Server racks operating",
-  "preferred_asset_type": "stock_video",
-  "alternative_asset_type": "ai_generated_video",
-  "animation_required": false,
-  "stock_search_queries": [
-    "cinematic data center server racks",
-    "hyperscale data center interior",
-    "server hardware close up"
-  ],
-  "visual_requirements": [
-    "realistic server infrastructure",
-    "visible equipment",
-    "professional lighting",
-    "no visible brand distortion"
-  ]
-}
-```
-
-The asset decision engine must consider narration meaning, visual purpose,
-factual accuracy, availability, licensing, visual quality, generation cost,
-production time, and continuity. The agent must explain why it selected stock
-footage, stock photography, AI generation, or original animation when
-documenting each scene.
+Visual bible and storyboard are supplied by the master orchestrator. The
+executor validates their structural completeness but does not rewrite
+creative direction or narration.
 
 # 8. VISUAL GENERATION
 
@@ -1940,76 +1768,21 @@ Change report location:
 `work/[topic]/preproduction/change-report.md` for per-run, plus this skill
 revision itself serves as the global change report.
 
-# 31. SEMANTIC VISUAL SELECTION (CORE)
+# 31. SEMANTIC VISUAL SELECTION (EXECUTION APPLICATION)
 
-Semantic visual selection is a core production requirement, not an
-appendix. For each narration segment extract:
-- Main subject.
-- Supporting subject.
-- Environment.
-- Visual action.
-- Cause/effect or mechanism.
-- Abstract concepts.
-- Intended viewer understanding.
-- Required on-screen visual.
-- Misleading visuals to avoid.
-
-Create a per-scene visual spec including narration_span, visual_job,
-asset_category, and relevance_test. Example: narration about a lottery
-ticket requires a person holding a lottery ticket and the numbers, not
-particle/grid imagery.
-
-Semantic relevance scoring (0-100) uses actual visual content, not
-filenames, tags, or keywords:
-- Subject: 25
-- Action: 20
-- Object: 15
-- Context/environment: 15
-- Narrative contribution: 15
-- Visual clarity: 10
-
-Thresholds:
-- 90-100: excellent, accept.
-- 80-89: acceptable, accept with review.
-- Below 80: reject and search again or reject outright.
-No cinematic quality score may compensate for a semantically irrelevant
-visual.
-
-Visual selection hierarchy by semantic need:
-1. Relevant high-quality stock video.
-2. Relevant stock images or licensed archival footage.
-3. Original AI image/video where needed.
-4. 3D/procedural visualization where needed.
-5. Motion graphics as supporting explanation only.
-Do not prioritize AI generation over suitable stock. Do not generate to
-satisfy a removed quota.
-
-Reject repeated backgrounds, particles, grids, futuristic backgrounds,
-unnecessary charts, repetitive zoom, generic stock, and keyword-only
-matches. Require meaningful progression and new information each scene.
+Semantic visual selection is mandatory at execution time, but its scoring
+model, weights, and thresholds are canonical in the master orchestrator
+(main SKILL.md section 7). Execute selection, evaluate candidates using
+that model, and record scores/provenance. Do not maintain a second
+scoring definition here.
 
 # 32. PRODUCTION CONTRACT (MASTER TO EXECUTOR)
 
-Master orchestrator supplies:
-- Topic and slug.
-- Research and sources.
-- Narration script and phrase timings.
-- Visual bible.
-- Storyboard with scene bindings.
-- Scene-asset plan and visual requirements.
-- Timing and continuity constraints.
-- Approval/rework decisions.
-
-Production executor returns:
-- Asset registry with scores and provenance.
-- Selected asset paths and scene render paths.
-- Timeline manifest (assembled-timeline.json).
-- QA results and repair targets (qa/qa-report.json).
-- Failed operations and known limitations.
-- Production report.
-
-The master orchestrator verifies execution results before completion. The
-executor must not alter creative direction or narration.
+The canonical input/output contract is defined in the master orchestrator
+(main SKILL.md section 10). The executor implements those obligations
+without altering creative direction or narration: it consumes the master's
+artifacts, executes production, and returns the structured results listed
+there. In case of conflict, the master's contract prevails.
 
 # 33. FRAME-LEVEL SEMANTIC QA
 
