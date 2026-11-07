@@ -1,232 +1,125 @@
 import React from "react";
-import {
-  AbsoluteFill,
-  useCurrentFrame,
-  useVideoConfig,
-  interpolate,
-  spring,
-} from "remotion";
+import { AbsoluteFill, useCurrentFrame, useVideoConfig, interpolate, spring } from "remotion";
 
-const COLORS = {
-  bg: "#0b1020",
-  deep: "#101a33",
-  accent: "#4fd1c5",
-  warm: "#f6ad55",
-  text: "#f7fafc",
-  muted: "#a0aec0",
-};
+const COLORS = { bg: "#070b16", deep: "#0d1630", accent: "#4fd1c5", warm: "#f6ad55", text: "#f7fafc", muted: "#a0aec0", pink: "#f472b6" };
 
-const Caption: React.FC<{
-  text: string;
-  highlight?: string;
-  startFrame: number;
-}> = ({ text, highlight, startFrame }) => {
+const Caption: React.FC<{ text: string; start: number; end: number }> = ({ text, start, end }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const enter = spring({ frame: frame - startFrame, fps, config: { damping: 18, mass: 0.6 } });
-  const opacity = interpolate(frame, [startFrame, startFrame + 8], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const y = interpolate(enter, [0, 1], [26, 0]);
-  const words = text.split(" ");
+  const opacity = interpolate(frame, [start, start + 10, end - 8, end], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const y = spring({ frame: frame - start, fps, config: { damping: 18, mass: 0.6 } });
   return (
-    <div
-      style={{
-        position: "absolute",
-        left: 120,
-        right: 120,
-        bottom: 72,
-        opacity,
-        transform: `translateY(${y}px)`,
-        display: "flex",
-        flexWrap: "wrap",
-        justifyContent: "center",
-        gap: 10,
-        fontSize: 40,
-        lineHeight: 1.25,
-        fontWeight: 600,
-        color: COLORS.text,
-        textAlign: "center",
-        textShadow: "0 2px 18px rgba(0,0,0,0.45)",
-      }}
-    >
-      {words.map((word, index) => {
-        const isHighlight = highlight ? word.toLowerCase().includes(highlight.toLowerCase()) : false;
-        return (
-          <span
-            key={index}
-            style={{
-              color: isHighlight ? COLORS.warm : COLORS.text,
-              transform: isHighlight ? `scale(${interpolate(enter, [0, 1], [0.9, 1.08])})` : "none",
-              display: "inline-block",
-            }}
-          >
-            {word}
-          </span>
-        );
-      })}
+    <div style={{ position: "absolute", left: 140, right: 140, bottom: 70, opacity, transform: `translateY(${interpolate(y, [0,1],[18,0])}px)`, fontSize: 40, lineHeight: 1.25, fontWeight: 600, color: COLORS.text, textAlign: "center", textShadow: "0 2px 18px rgba(0,0,0,0.55)" }}>
+      {text}
     </div>
   );
 };
 
-const ParallaxBackground: React.FC = () => {
+const Scene: React.FC<{ children: React.ReactNode; start: number; end: number }> = ({ children, start, end }) => {
   const frame = useCurrentFrame();
-  const phase = frame / 18;
-  const back = 38 * Math.sin(phase) + interpolate(frame, [0, 300], [0, 30], { extrapolateRight: "clamp" });
-  const mid = -28 * Math.cos(phase * 1.3) + interpolate(frame, [0, 300], [0, -22], { extrapolateRight: "clamp" });
-  const fore = 16 * Math.sin(phase * 0.7) + interpolate(frame, [0, 300], [0, 14], { extrapolateRight: "clamp" });
-  return (
-    <AbsoluteFill style={{ overflow: "hidden", backgroundColor: COLORS.bg }}>
-      <div
-        style={{
-          position: "absolute",
-          inset: -120,
-          background:
-            "radial-gradient(circle at 30% 35%, rgba(79,209,197,0.22), transparent 38%), radial-gradient(circle at 70% 30%, rgba(246,173,85,0.18), transparent 42%)",
-          transform: `translate3d(${back}px, -${back * 0.35}px, 0) scale(1.08)`,
-        }}
-      />
-      <svg width="1920" height="1080" style={{ position: "absolute", inset: 0, transform: `translate3d(${mid}px, ${mid * 0.25}px, 0)` }}>
-        {Array.from({ length: 18 }).map((_, i) => (
-          <circle
-            key={i}
-            cx={120 + i * 110 + 18 * Math.sin(frame / 20 + i)}
-            cy={180 + (i % 5) * 150 + 14 * Math.cos(frame / 16 + i)}
-            r={16 + (i % 4) * 8 + 3 * Math.sin(frame / 14 + i)}
-            fill="rgba(247,250,252,0.06)"
-          />
-        ))}
-      </svg>
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "linear-gradient(135deg, rgba(10,16,32,0.35), rgba(10,16,32,0.72))",
-          transform: `translate3d(${fore}px, ${fore * 0.2}px, 0)`,
-        }}
-      />
-    </AbsoluteFill>
-  );
+  const opacity = interpolate(frame, [start, start + 12, end - 12, end], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  return <AbsoluteFill style={{ opacity }}>{children}</AbsoluteFill>;
 };
 
 export const FullVisual: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-
-  const introOpacity = interpolate(frame, [0, 18], [0, 1], { extrapolateRight: "clamp" });
-  const introScale = spring({ frame, fps, config: { damping: 14, mass: 0.8 } });
-
-  const scene2Opacity = interpolate(frame, [105, 125], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const scene3Opacity = interpolate(frame, [210, 230], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
-  const drawProgress = interpolate(frame, [125, 185], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const count = Math.round(interpolate(frame, [225, 285], [0, 84], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  }));
-
-  const pulse = 1 + 0.025 * Math.sin(frame / 9);
-  const tilt = 0.35 * Math.sin(frame / 13);
+  const pulse = 1 + 0.018 * Math.sin(frame / 11);
   return (
-    <AbsoluteFill style={{ backgroundColor: COLORS.bg, color: COLORS.text, fontFamily: "Inter, Helvetica Neue, Arial, sans-serif", transform: `scale(${pulse}) rotate(${tilt}deg)`, transformOrigin: "center center" }}>
-      <ParallaxBackground />
-
-      {/* Scene 1: thesis and animated hierarchy */}
-      <AbsoluteFill style={{ opacity: introOpacity }}>
-        <div
-          style={{
-            position: "absolute",
-            top: 130,
-            left: 120,
-            transform: `scale(${interpolate(introScale, [0, 1], [0.92, 1])})`,
-          }}
-        >
-          <div style={{ fontSize: 74, fontWeight: 800, letterSpacing: -1.5, lineHeight: 1.05 }}>
-            Trees on every part of land
-          </div>
-          <div style={{ marginTop: 18, fontSize: 34, color: COLORS.muted, maxWidth: 1050 }}>
-            A preview of programmatic motion graphics, layered parallax, SVG diagram animation, counters, and caption styling.
-          </div>
+    <AbsoluteFill style={{ backgroundColor: COLORS.bg, color: COLORS.text, fontFamily: "Inter, Helvetica Neue, Arial, sans-serif", transform: `scale(${pulse})`, transformOrigin: "center center" }}>
+      <AbsoluteFill style={{ background: "radial-gradient(circle at 50% 40%, rgba(79,209,197,0.18), transparent 45%), radial-gradient(circle at 70% 25%, rgba(246,173,85,0.12), transparent 40%)" }} />
+      {/* Scene 1 */}
+      <Scene start={0} end={285}>
+        <div style={{ position: "absolute", top: 150, left: 140, fontSize: 78, fontWeight: 900, letterSpacing: -2, lineHeight: 1.05 }}>
+          Absolute Probability Vision
         </div>
-        <svg width="760" height="420" viewBox="0 0 760 420" style={{ position: "absolute", right: 110, bottom: 150 }}>
-          <rect x="40" y="300" width="680" height="12" fill="rgba(247,250,252,0.16)" rx="6" />
-          {Array.from({ length: 7 }).map((_, index) => {
-            const height = 50 + ((index * 37) % 180);
-            const grow = spring({ frame: frame - index * 4, fps, config: { damping: 15 } });
+        <div style={{ position: "absolute", top: 260, left: 140, fontSize: 34, color: COLORS.muted, maxWidth: 900 }}>
+          What happens when every outcome carries an exact number?
+        </div>
+        <svg width="760" height="520" style={{ position: "absolute", right: 120, bottom: 150 }}>
+          {Array.from({ length: 14 }).map((_, i) => {
+            const a = (i / 14) * Math.PI * 2 + frame / 55;
+            const r = 180 + 26 * Math.sin(frame / 18 + i);
+            const x = 380 + r * Math.cos(a);
+            const y = 260 + r * Math.sin(a);
             return (
-              <rect
-                key={index}
-                x={60 + index * 95}
-                y={300 - height * grow}
-                width={52}
-                height={height * grow}
-                rx="8"
-                fill={index % 2 === 0 ? COLORS.accent : COLORS.warm}
-                opacity={0.88}
-              />
+              <g key={i}>
+                <circle cx={x} cy={y} r={8 + (i % 4) * 3 + 2 * Math.sin(frame / 9 + i)} fill={i % 3 === 0 ? COLORS.warm : i % 3 === 1 ? COLORS.accent : COLORS.pink} opacity={0.85} />
+                <text x={x + 14} y={y + 6} fill={COLORS.text} fontSize={24} fontWeight={700}>{(30 + (i * 17 + frame) % 61)}%</text>
+              </g>
             );
           })}
         </svg>
-      </AbsoluteFill>
-
-      {/* Scene 2: animated SVG diagram */}
-      <AbsoluteFill style={{ opacity: scene2Opacity }}>
-        <div style={{ position: "absolute", top: 110, left: 120, fontSize: 62, fontWeight: 800 }}>
-          Layered ecosystem diagram
-        </div>
-        <svg width="860" height="620" viewBox="0 0 860 620" style={{ position: "absolute", left: 110, top: 230 }}>
-          <path
-            d="M80 500 C260 390, 420 450, 560 300 S760 120, 820 160"
-            fill="none"
-            stroke={COLORS.accent}
-            strokeWidth="8"
-            strokeLinecap="round"
-            strokeDasharray="1000"
-            strokeDashoffset={1000 * (1 - drawProgress)}
-          />
-          <circle cx={120 + drawProgress * 640} cy={450 - drawProgress * 260} r="16" fill={COLORS.warm} />
-          <foreignObject x="600" y="70" width="220" height="120">
-            <div style={{ color: COLORS.text, fontSize: 26, fontWeight: 700 }}>Carbon flows</div>
-          </foreignObject>
+      </Scene>
+      {/* Scene 2 */}
+      <Scene start={270} end={555}>
+        <div style={{ position: "absolute", top: 120, left: 140, fontSize: 62, fontWeight: 800 }}>A storm of fractions</div>
+        <svg width="1700" height="640" style={{ position: "absolute", left: 100, top: 260 }}>
+          {Array.from({ length: 48 }).map((_, i) => {
+            const t = (frame / 40 + i * 0.4) % (Math.PI * 2);
+            const cx = 100 + (i % 12) * 135 + 14 * Math.sin(t);
+            const cy = 60 + Math.floor(i / 12) * 150 + 10 * Math.cos(t * 1.3);
+            return <circle key={i} cx={cx} cy={cy} r={4 + 3 * Math.sin(t)} fill={i % 2 === 0 ? "rgba(79,209,197,0.7)" : "rgba(246,173,85,0.6)"} />;
+          })}
         </svg>
-      </AbsoluteFill>
+      </Scene>
+      {/* Scene 3 */}
+      <Scene start={540} end={825}>
+        <div style={{ position: "absolute", top: 120, left: 140, fontSize: 62, fontWeight: 800 }}>Absolute hesitation</div>
+        <svg width="900" height="520" style={{ position: "absolute", left: 140, top: 280 }}>
+          {Array.from({ length: 6 }).map((_, i) => {
+            const progress = interpolate(frame, [540 + i * 18, 540 + i * 18 + 60], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+            return (
+              <g key={i}>
+                <rect x={40} y={40 + i * 70} width={760} height={46} rx={10} fill="rgba(247,250,252,0.08)" />
+                <rect x={40} y={40 + i * 70} width={760 * progress} height={46} rx={10} fill={i % 2 === 0 ? COLORS.accent : COLORS.warm} opacity={0.75} />
+                <text x={815} y={72 + i * 70} fill={COLORS.text} fontSize={26} fontWeight={700}>{Math.round(progress * 100)}%</text>
+              </g>
+            );
+          })}
+        </svg>
+      </Scene>
+      {/* Scene 4 */}
+      <Scene start={810} end={1095}>
+        <div style={{ position: "absolute", top: 120, left: 140, fontSize: 62, fontWeight: 800 }}>Intentions become distributions</div>
+        <svg width="1100" height="620" style={{ position: "absolute", left: 410, top: 240 }}>
+          {Array.from({ length: 10 }).map((_, row) =>
+            Array.from({ length: 14 }).map((_, col) => {
+              const idx = row * 14 + col;
+              const v = (Math.sin(idx * 0.6 + frame / 24) + 1) / 2;
+              return <rect key={idx} x={col * 70} y={row * 52} width={62} height={44} rx={6} fill={`rgba(79,209,197,${0.15 + v * 0.6})`} />;
+            })
+          )}
+        </svg>
+      </Scene>
+      {/* Scene 5 */}
+      <Scene start={1080} end={1350}>
+        <div style={{ position: "absolute", top: 120, left: 140, fontSize: 62, fontWeight: 800 }}>Meaning is what we do with the odds</div>
+        <svg width="900" height="500" style={{ position: "absolute", left: 900, top: 300 }}>
+          <path d={`M40,400 C ${160 + 40*Math.sin(frame/18)},260 ${320 + 30*Math.cos(frame/21)},160 ${500 + 20*Math.sin(frame/24)},80 ${680 + 10*Math.cos(frame/19)},40`} fill="none" stroke={COLORS.accent} strokeWidth="10" strokeLinecap="round" />
+          {Array.from({ length: 6 }).map((_, i) => (
+            <circle key={i} cx={100 + i * 130} cy={360 - i * i * 8 + 10 * Math.sin(frame / 12 + i)} r={12 + 3 * Math.sin(frame / 9 + i)} fill={COLORS.warm} />
+          ))}
+        </svg>
+      </Scene>
 
-      {/* Scene 3: statistic counter */}
-      <AbsoluteFill style={{ opacity: scene3Opacity, justifyContent: "center", alignItems: "center" }}>
-        <div style={{ fontSize: 190, fontWeight: 900, color: COLORS.accent, letterSpacing: -4 }}>
-          {count}%
-        </div>
-        <div style={{ fontSize: 42, color: COLORS.muted, marginTop: 16 }}>
-          Remotion-driven overlays, captions, and transitions.
-        </div>
-      </AbsoluteFill>
-
-      <Caption
-        text="Every part of the land on Earth has trees."
-        highlight="trees"
-        startFrame={0}
-      />
-      <Caption
-        text="This preview exercises cinematic motion without paid services."
-        highlight="motion"
-        startFrame={105}
-      />
-      <Caption
-        text="Final scenes connect real narration to measured timestamps."
-        highlight="timestamps"
-        startFrame={210}
-      />
-    </AbsoluteFill>
+      {/* Captions */}
+      <Caption start={0} end={60} text="Imagine waking up with a new sense." />
+      <Caption start={63} end={224} text="Every possible outcome, from a coin flip to a marriage proposal, carries a live percentage." />
+      <Caption start={228} end={288} text="At first it feels like omniscience." />
+      <Caption start={291} end={373} text="A seventy-three percent chance the train arrives late." />
+      <Caption start={377} end={456} text="A twelve percent chance a stranger smiles back." />
+      <Caption start={460} end={538} text="But certainty of numbers is not certainty of meaning." />
+      <Caption start={542} end={635} text="Absolute clarity can become absolute hesitation." />
+      <Caption start={639} end={762} text="When every action is a distribution, courage competes with calculation." />
+      <Caption start={766} end={861} text="You stop seeing intentions, and start reading likelihoods." />
+      <Caption start={865} end={917} text="Yet probabilities describe." />
+      <Caption start={920} end={956} text="They do not decide." />
+      <Caption start={960} end={1000} text="The dice do not act." />
+      <Caption start={1003} end={1029} text="People do." />
+      <Caption start={1033} end={1199} text="The courage to act, imperfectly, with incomplete certainty, is what turns odds into outcomes." />
+      <Caption start={1202} end={1254} text="Meaning is not the percentage." />
+      <Caption start={1257} end={1315} text="Meaning is what we do with the odds." />
+</AbsoluteFill>
   );
 };

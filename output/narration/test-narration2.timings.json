@@ -1,0 +1,13 @@
+{
+  "audio_file": "C:\\Users\\Admin\\projects\\stuffs\\output\\narration\\test-narration2.wav",
+  "sample_rate": 24000,
+  "segments": [
+    {
+      "index": 0,
+      "text": "Hello world. This is a test.",
+      "start_seconds": 0.0,
+      "end_seconds": 1.685,
+      "duration_seconds": 1.685
+    }
+  ]
+}
