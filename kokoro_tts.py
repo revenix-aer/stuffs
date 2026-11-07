@@ -28,7 +28,7 @@ def setup_path():
 
 def split_sentences(text):
     # Split into spoken phrases while preserving abbreviations reasonably.
-    parts = re.split(r"(?<=[.!?;:])\\s+", text.strip())
+    parts = re.split(r"(?<=[.!?;:])\s+", text.strip())
     return [p.strip() for p in parts if p.strip()]
 
 
