@@ -8,8 +8,15 @@ work/
 
 node_modules/
 .cache/
-*.pyc
 
 remotion/node_modules/
 remotion/build/
 remotion/out/
+
+# generated media; keep markdown and json in output/
+output/**/*.mp4
+output/**/*.wav
+output/**/*.png
+output/**/*.webp
+output/**/*.jpg
+output/**/*.jpeg

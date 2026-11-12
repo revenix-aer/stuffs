@@ -1,29 +1,58 @@
 #!/usr/bin/env python3
 """Kokoro (ONNX) neural TTS for narration.
 
-Uses kokoro-onnx installed in /dev/shm/kokoro-packages.
-Run via:
-  PYTHONPATH=/dev/shm/kokoro-packages python3 kokoro_tts.py --text "..."
+Looks for the model in this order:
+  1. KOKORO_MODEL and KOKORO_VOICES
+  2. models/ next to this script
+  3. /dev/shm/kokoro-models/ (the original machine layout)
+
+Optional extra import path: KOKORO_PYTHONPATH, or /dev/shm/kokoro-packages
+if that directory exists.
 """
 import argparse
 import json
 import os
 import re
-import struct
 import sys
 import wave
 from pathlib import Path
 import subprocess
 
-PYTHON_SITE = "/dev/shm/kokoro-packages"
-MODEL_PATH = "/dev/shm/kokoro-models/kokoro-v1.0.int8.onnx"
-VOICES_PATH = "/dev/shm/kokoro-models/voices-v1.0.bin"
+REPO_ROOT = Path(__file__).resolve().parent
+DEFAULT_OUTDIR = REPO_ROOT / "output" / "narration"
 DEFAULT_VOICE = "am_adam"
+SHM_PACKAGES = Path("/dev/shm/kokoro-packages")
+SHM_MODEL = Path("/dev/shm/kokoro-models/kokoro-v1.0.int8.onnx")
+SHM_VOICES = Path("/dev/shm/kokoro-models/voices-v1.0.bin")
 
 
 def setup_path():
-    if PYTHON_SITE not in sys.path:
-        sys.path.insert(0, PYTHON_SITE)
+    extra = os.environ.get("KOKORO_PYTHONPATH")
+    if extra:
+        candidate = extra
+    elif SHM_PACKAGES.is_dir():
+        candidate = str(SHM_PACKAGES)
+    else:
+        return
+    if candidate not in sys.path:
+        sys.path.insert(0, candidate)
+
+
+def resolve_asset(env_name, repo_relative, shm_path, label):
+    env_value = os.environ.get(env_name)
+    if env_value:
+        path = Path(env_value)
+        if path.is_file():
+            return path
+        raise FileNotFoundError(f"{label} from {env_name} is missing: {path}")
+    repo_path = REPO_ROOT / repo_relative
+    if repo_path.is_file():
+        return repo_path
+    if shm_path.is_file():
+        return shm_path
+    raise FileNotFoundError(
+        f"{label} missing. Set {env_name}, or place it at {repo_path}."
+    )
 
 
 def split_sentences(text):
@@ -35,16 +64,19 @@ def split_sentences(text):
 def synthesize(text, voice=DEFAULT_VOICE, speed=1.0):
     setup_path()
     from kokoro_onnx import Kokoro
-    if not Path(MODEL_PATH).exists() or not Path(VOICES_PATH).exists():
-        raise FileNotFoundError(
-            f"Kokoro model/voices missing. Expected {MODEL_PATH} and {VOICES_PATH}.")
-    kokoro = Kokoro(MODEL_PATH, VOICES_PATH)
+
+    model_path = resolve_asset(
+        "KOKORO_MODEL", "models/kokoro-v1.0.int8.onnx", SHM_MODEL, "Kokoro model"
+    )
+    voices_path = resolve_asset(
+        "KOKORO_VOICES", "models/voices-v1.0.bin", SHM_VOICES, "Kokoro voices"
+    )
+    kokoro = Kokoro(str(model_path), str(voices_path))
     phrases = split_sentences(text)
     segment_samples = []
     sample_rate = None
     for phrase in phrases:
-        samples, sr = kokoro.create(phrase, voice=voice, speed=speed,
-                                    lang="en-us")
+        samples, sr = kokoro.create(phrase, voice=voice, speed=speed, lang="en-us")
         sample_rate = int(sr)
         segment_samples.append((phrase, list(samples)))
     pause_len = int(sample_rate * 0.12) if sample_rate else 0
@@ -56,14 +88,15 @@ def synthesize(text, voice=DEFAULT_VOICE, speed=1.0):
         assembled.extend(samples)
         duration = len(samples) / sample_rate
         cursor += duration
-        timing.append({
-            "index": index,
-            "text": phrase,
-            "start_seconds": round(start, 3),
-            "end_seconds": round(cursor, 3),
-            "duration_seconds": round(duration, 3),
-        })
-        # Insert a short breath pause between phrases, but not after the last.
+        timing.append(
+            {
+                "index": index,
+                "text": phrase,
+                "start_seconds": round(start, 3),
+                "end_seconds": round(cursor, 3),
+                "duration_seconds": round(duration, 3),
+            }
+        )
         if index < len(segment_samples) - 1 and pause_len:
             assembled.extend([0.0] * pause_len)
             cursor += pause_len / sample_rate
@@ -71,15 +104,14 @@ def synthesize(text, voice=DEFAULT_VOICE, speed=1.0):
     return assembled, int(sample_rate), timing
 
 
-def write_wav(path, samples, sample_rate, resample_to_48k=True,
-              normalize=True):
+def write_wav(path, samples, sample_rate, resample_to_48k=True, normalize=True):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     import numpy as np
+
     arr = np.asarray(samples, dtype="float32")
     arr = np.clip(arr, -1.0, 1.0)
     pcm16 = (arr * 32767.0).astype("int16")
-    raw_path = path
     if path.suffix.lower() != ".wav":
         path = path.with_suffix(".wav")
     tmp = path.with_suffix(".raw.wav")
@@ -108,7 +140,7 @@ def main():
     ap.add_argument("--text-file", default="")
     ap.add_argument("--voice", default=DEFAULT_VOICE)
     ap.add_argument("--speed", type=float, default=1.0)
-    ap.add_argument("--outdir", default="/home/droid/stuffs/output/narration")
+    ap.add_argument("--outdir", default=str(DEFAULT_OUTDIR))
     ap.add_argument("--filename", default="narration.wav")
     ap.add_argument("--no-resample", action="store_true")
     args = ap.parse_args()
@@ -124,18 +156,32 @@ def main():
     out_path = Path(args.outdir) / args.filename
     final = write_wav(out_path, samples, sr, resample_to_48k=not args.no_resample)
     timing_path = final.with_suffix(".timings.json")
-    timing_path.write_text(json.dumps({
-        "audio_file": str(final),
-        "sample_rate": sr,
-        "segments": timing,
-    }, indent=2), encoding="utf-8")
+    timing_path.write_text(
+        json.dumps(
+            {
+                "audio_file": str(final),
+                "sample_rate": sr,
+                "segments": timing,
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
     print(f"saved: {final}")
     print(f"timings: {timing_path}")
-    # probe
-    subprocess.run(["ffprobe", "-v", "error", "-show_entries", "stream=codec_name,sample_rate,channels", "-of", "default=noprint_wrappers=1", str(final)])
+    subprocess.run(
+        [
+            "ffprobe",
+            "-v",
+            "error",
+            "-show_entries",
+            "stream=codec_name,sample_rate,channels",
+            "-of",
+            "default=noprint_wrappers=1",
+            str(final),
+        ]
+    )
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-PY
-chmod +x /home/droid/stuffs/kokoro_tts.py

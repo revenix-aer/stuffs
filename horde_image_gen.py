@@ -6,20 +6,22 @@ completion, and downloads the resulting image(s) as PNG files.
 
 API docs: https://aihorde.net/api  (see /api/v2/generate/async)
 Anonymous key "0000000000" works but runs at very low priority.
+Set HORDE_API_KEY to use your own key.
 """
 import argparse
 import base64
-import json
+import os
 import sys
 import time
 from pathlib import Path
-from urllib.parse import urlparse
 
 import requests
 
 API_BASE = "https://aihorde.net/api/v2"
 ANON_KEY = "0000000000"
 CLIENT_AGENT = "stuffs-horde-client:1.0:user"
+REPO_ROOT = Path(__file__).resolve().parent
+DEFAULT_OUTDIR = REPO_ROOT / "output" / "horde"
 
 
 def submit(prompt, params, nsfw=False, models=None, trusted=False, timeout=30):
@@ -34,10 +36,14 @@ def submit(prompt, params, nsfw=False, models=None, trusted=False, timeout=30):
     }
     if models:
         body["models"] = [m.strip() for m in models.split(",") if m.strip()]
-    headers = {"apikey": ANON_KEY, "Client-Agent": CLIENT_AGENT,
-               "Content-Type": "application/json"}
-    r = requests.post(API_BASE + "/generate/async", headers=headers,
-                      json=body, timeout=timeout)
+    headers = {
+        "apikey": os.environ.get("HORDE_API_KEY") or ANON_KEY,
+        "Client-Agent": CLIENT_AGENT,
+        "Content-Type": "application/json",
+    }
+    r = requests.post(
+        API_BASE + "/generate/async", headers=headers, json=body, timeout=timeout
+    )
     r.raise_for_status()
     data = r.json()
     if "id" not in data:
@@ -49,8 +55,9 @@ def poll(job_id, overall_timeout=300, interval=3):
     deadline = time.monotonic() + overall_timeout
     headers = {"Client-Agent": CLIENT_AGENT}
     while time.monotonic() < deadline:
-        r = requests.get(API_BASE + f"/generate/status/{job_id}",
-                         headers=headers, timeout=30)
+        r = requests.get(
+            API_BASE + f"/generate/status/{job_id}", headers=headers, timeout=30
+        )
         r.raise_for_status()
         data = r.json()
         done = bool(data.get("done"))
@@ -58,8 +65,11 @@ def poll(job_id, overall_timeout=300, interval=3):
         queue_pos = data.get("queue_position", "?")
         eta = data.get("eta", "?")
         finished = len(data.get("generations", []) or [])
-        print(f"  status: done={done} faulted={faulted} "
-              f"queue={queue_pos} eta={eta}s finished={finished}", flush=True)
+        print(
+            f"  status: done={done} faulted={faulted} "
+            f"queue={queue_pos} eta={eta}s finished={finished}",
+            flush=True,
+        )
         if faulted:
             raise RuntimeError(f"job faulted: {data.get('message') or data}")
         if done:
@@ -83,14 +93,15 @@ def _to_png(content, path):
     if _detect_ext(content) == ".png":
         path.write_bytes(content)
         return path
-    # convert any other supported format to PNG
     tmp = path.with_suffix(".raw")
     tmp.write_bytes(content)
     try:
         import subprocess
+
         subprocess.run(
             ["ffmpeg", "-y", "-loglevel", "error", "-i", str(tmp), str(path)],
-            check=True, capture_output=True,
+            check=True,
+            capture_output=True,
         )
     finally:
         try:
@@ -107,12 +118,10 @@ def save_image(img_value, outdir, name):
         r.raise_for_status()
         content = r.content
     else:
-        # base64 (possibly data: URI)
         s = img_value
         if "," in s and s.startswith("data:"):
             s = s.split(",", 1)[1]
         content = base64.b64decode(s)
-    # normalise filename extension to .png
     stem = Path(name).stem
     path = outdir / (stem + ".png")
     return _to_png(content, path)
@@ -133,10 +142,13 @@ def main():
     ap.add_argument("--steps", type=int, default=30)
     ap.add_argument("--cfg", type=float, default=7.5)
     ap.add_argument("--sampler", default="k_euler_a")
-    ap.add_argument("--raw-prompt", action="store_true",
-                    help="Disable automatic cinematic prompt enhancement.")
+    ap.add_argument(
+        "--raw-prompt",
+        action="store_true",
+        help="Disable automatic cinematic prompt enhancement.",
+    )
     ap.add_argument("--models", default="", help="comma-separated model names")
-    ap.add_argument("--outdir", default="/home/droid/stuffs/output/horde")
+    ap.add_argument("--outdir", default=str(DEFAULT_OUTDIR))
     ap.add_argument("--nsfw", action="store_true")
     ap.add_argument("--timeout", type=int, default=300)
     args = ap.parse_args()
@@ -165,8 +177,8 @@ def main():
         "steps": args.steps,
         "cfg_scale": args.cfg,
         "sampler_name": args.sampler,
+        "negative_prompt": negative,
     }
-    params["negative_prompt"] = negative
 
     print(f"submitting prompt: {prompt!r}")
     job_id = submit(prompt, params, nsfw=args.nsfw, models=args.models)
@@ -189,8 +201,9 @@ def main():
         name = make_name(i, slug)
         path = save_image(img, outdir, name)
         saved.append(path)
-        print(f"saved: {path} (model={g.get('model','?')}, "
-              f"seed={g.get('seed','?')})")
+        print(
+            f"saved: {path} (model={g.get('model', '?')}, seed={g.get('seed', '?')})"
+        )
 
     print(f"\ntotal saved: {len(saved)}")
     for p in saved:
@@ -199,5 +212,3 @@ def main():
 
 if __name__ == "__main__":
     raise SystemExit(main())
-PY
-chmod +x /home/droid/stuffs/horde_image_gen.py
